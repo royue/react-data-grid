@@ -47,7 +47,13 @@
     "eslint:fix": "node --run eslint -- --fix",
     "prettier:check": "prettier --check .",
     "prettier:format": "prettier --write .",
-    "typecheck": "tsc --build"
+    "typecheck": "tsc --build",
+    "prepublishOnly": "npm install && node --run build",
+    "postpublish": "git push --follow-tags origin HEAD"
+  },
+  "dependencies": {
+    "clsx": "^2.0.0",
+    "react-window": "^1.8.11"
   },
   "dependencies": {
     "antd": "^5.27.0",
