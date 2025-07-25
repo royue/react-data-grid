@@ -38,6 +38,9 @@ export const resizeHandleClassname = css`
     inset-inline-end: 0;
     inset-block-end: 0;
     inline-size: 10px;
+    &:hover {
+      border-right: 2px solid var(--rdg-border-color);
+    }
   }
 `;
 

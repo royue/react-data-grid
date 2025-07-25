@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-router';
 
 import { routeTree } from './routeTree.gen';
+import { AllFeatures } from './routes/AllFeatures';
 
 const router = createRouter({
   routeTree,
@@ -33,9 +34,11 @@ declare module '@tanstack/react-router' {
 function NotFound() {
   return 'Nothing to see here';
 }
-
-createRoot(document.getElementById('root')!).render(
+const root = createRoot(document.getElementById('root')!);
+root.render(
   <StrictMode>
-    <RouterProvider router={router} />
+    {/* <RouterProvider router={router} />
+     */}
+     <AllFeatures />
   </StrictMode>
 );

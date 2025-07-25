@@ -200,9 +200,9 @@ const columns: readonly Column<Row>[] = [
   }
 ];
 
-function AllFeatures() {
+export function AllFeatures() {
   const direction = useDirection();
-  const initialRows = Route.useLoaderData();
+  const initialRows = [{id: 1}, {id: 2}] as unknown;
   const [rows, setRows] = useState(initialRows);
   const [selectedRows, setSelectedRows] = useState((): ReadonlySet<string> => new Set());
   const [copiedCell, setCopiedCell] = useState<{

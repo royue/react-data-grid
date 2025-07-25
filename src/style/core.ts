@@ -11,9 +11,8 @@ const lightTheme = `
   --rdg-header-background-color: hsl(0deg 0% 97.5%);
   --rdg-header-draggable-background-color: hsl(0deg 0% 90.5%);
   --rdg-row-hover-background-color: hsl(0deg 0% 96%);
-  --rdg-row-selected-background-color: hsl(207deg 76% 92%);
-  --rdg-row-selected-hover-background-color: hsl(207deg 76% 88%);
-
+  --rdg-row-selected-background-color: var(--ant-color-primary-bg, hsl(207deg 76% 92%));
+  --rdg-row-selected-hover-background-color: var(--ant-color-primary-bg-hover, hsl(207deg 76% 88%));
   --rdg-checkbox-focus-color: hsl(207deg 100% 69%);
 `;
 
@@ -25,9 +24,8 @@ const darkTheme = `
   --rdg-header-background-color: hsl(0deg 0% 10.5%);
   --rdg-header-draggable-background-color: hsl(0deg 0% 17.5%);
   --rdg-row-hover-background-color: hsl(0deg 0% 9%);
-  --rdg-row-selected-background-color: hsl(207deg 76% 42%);
-  --rdg-row-selected-hover-background-color: hsl(207deg 76% 38%);
-
+  --rdg-row-selected-background-color: var(--ant-color-primary-bg, hsl(207deg 76% 42%));
+  --rdg-row-selected-hover-background-color: var(--ant-color-primary-bg-hover, hsl(207deg 76% 38%));
   --rdg-checkbox-focus-color: hsl(207deg 100% 89%);
 `;
 
@@ -43,7 +41,7 @@ const root = css`
   @layer rdg.Root {
     ${lightTheme}
     --rdg-selection-width: 2px;
-    --rdg-selection-color: hsl(207, 75%, 66%);
+    --rdg-selection-color:var(--ant-color-primary, hsl(207, 75%, 66%));
     --rdg-font-size: 14px;
     --rdg-cell-frozen-box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
     --rdg-border-width: 1px;
@@ -56,7 +54,7 @@ const root = css`
     display: grid;
 
     color-scheme: var(--rdg-color-scheme, light dark);
-    accent-color: light-dark(hsl(207deg 100% 29%), hsl(207deg 100% 79%));
+    accent-color: light-dark(var(--ant-color-primary, hsl(207deg 100% 29%)),var(--ant-color-primary,  hsl(207deg 100% 79%)));
 
     /* https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context */
     /* We set a stacking context so internal elements don't render on top of external elements. */
