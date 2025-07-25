@@ -59,7 +59,7 @@ function GroupedRow<R, SR>({
   );
 
   return (
-    <RowSelectionContext value={selectionValue}>
+    <RowSelectionContext.Provider value={selectionValue}>
       <div
         role="row"
         aria-level={row.level + 1} // aria-level is 1-based
@@ -103,7 +103,7 @@ function GroupedRow<R, SR>({
           })
           .toArray()}
       </div>
-    </RowSelectionContext>
+    </RowSelectionContext.Provider>
   );
 }
 

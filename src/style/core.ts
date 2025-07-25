@@ -14,7 +14,7 @@ const root = css`
 
   @layer rdg.Root {
     --rdg-selection-width: 2px;
-    --rdg-selection-color: hsl(207, 75%, 66%);
+    --rdg-selection-color: var(--ant-color-primary, hsl(207, 75%, 66%));
     --rdg-font-size: 14px;
     --rdg-border-width: 1px;
     --rdg-summary-border-width: calc(var(--rdg-border-width) * 2);
@@ -25,8 +25,14 @@ const root = css`
     --rdg-header-background-color: light-dark(hsl(0deg 0% 97.5%), hsl(0deg 0% 10.5%));
     --rdg-header-draggable-background-color: light-dark(hsl(0deg 0% 90.5%), hsl(0deg 0% 17.5%));
     --rdg-row-hover-background-color: light-dark(hsl(0deg 0% 96%), hsl(0deg 0% 9%));
-    --rdg-row-selected-background-color: light-dark(hsl(207deg 76% 92%), hsl(207deg 76% 42%));
-    --rdg-row-selected-hover-background-color: light-dark(hsl(207deg 76% 88%), hsl(207deg 76% 38%));
+    --rdg-row-selected-background-color: light-dark(
+      var(--ant-color-primary-bg, hsl(207deg 76% 92%)),
+      var(--ant-color-primary-bg, hsl(207deg 76% 42%))
+    );
+    --rdg-row-selected-hover-background-color: light-dark(
+      var(--ant-color-primary-bg-hover, hsl(207deg 76% 88%)),
+      var(--ant-color-primary-bg-hover, hsl(207deg 76% 38%))
+    );
     --rdg-checkbox-focus-color: hsl(207deg 100% 69%);
 
     &.rdg-dark {
@@ -39,7 +45,10 @@ const root = css`
 
     display: grid;
 
-    accent-color: light-dark(hsl(207deg 100% 29%), hsl(207deg 100% 79%));
+    accent-color: light-dark(
+      var(--ant-color-primary, hsl(207deg 100% 29%)),
+      var(--ant-color-primary, hsl(207deg 100% 79%))
+    );
 
     /* https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context */
     /* We set a stacking context so internal elements don't render on top of external elements. */

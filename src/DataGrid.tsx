@@ -1130,9 +1130,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       data-testid={testId}
       data-cy={dataCy}
     >
-      <DataGridDefaultRenderersContext value={defaultGridComponents}>
-        <HeaderRowSelectionChangeContext value={selectHeaderRowLatest}>
-          <HeaderRowSelectionContext value={headerSelectionValue}>
+      <DataGridDefaultRenderersContext.Provider value={defaultGridComponents}>
+        <HeaderRowSelectionChangeContext.Provider value={selectHeaderRowLatest}>
+          <HeaderRowSelectionContext.Provider value={headerSelectionValue}>
             {Array.from({ length: groupedColumnHeaderRowsCount }, (_, index) => (
               <GroupedColumnHeaderRow
                 key={index}
@@ -1161,8 +1161,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
               shouldFocusGrid={!activePositionIsInActiveBounds}
               direction={direction}
             />
-          </HeaderRowSelectionContext>
-        </HeaderRowSelectionChangeContext>
+          </HeaderRowSelectionContext.Provider>
+        </HeaderRowSelectionChangeContext.Provider>
         {rows.length === 0 && noRowsFallback ? (
           noRowsFallback
         ) : (
@@ -1190,9 +1190,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
                 />
               );
             })}
-            <RowSelectionChangeContext value={selectRowLatest}>
+            <RowSelectionChangeContext.Provider value={selectRowLatest}>
               {getViewportRows()}
-            </RowSelectionChangeContext>
+            </RowSelectionChangeContext.Provider>
             {bottomSummaryRows?.map((row, rowIdx) => {
               const gridRowStart = headerAndTopSummaryRowsCount + rows.length + rowIdx + 1;
               const summaryRowIdx = rows.length + rowIdx;
@@ -1225,7 +1225,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
             })}
           </>
         )}
-      </DataGridDefaultRenderersContext>
+      </DataGridDefaultRenderersContext.Provider>
 
       {lastFrozenColumnIndex > -1 && (
         <>

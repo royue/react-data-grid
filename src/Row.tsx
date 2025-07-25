@@ -69,7 +69,7 @@ function Row<R, SR>({
   );
 
   return (
-    <RowSelectionContext value={selectionValue}>
+    <RowSelectionContext.Provider value={selectionValue}>
       <div
         role="row"
         tabIndex={isTreeGrid ? (isPositionOnRow ? 0 : -1) : undefined}
@@ -82,7 +82,7 @@ function Row<R, SR>({
       >
         {cells}
       </div>
-    </RowSelectionContext>
+    </RowSelectionContext.Provider>
   );
 }
 
