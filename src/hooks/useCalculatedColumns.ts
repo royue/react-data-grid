@@ -54,7 +54,13 @@ export function useCalculatedColumns<R, SR>({
   const defaultResizable = defaultColumnOptions?.resizable ?? false;
   const defaultDraggable = defaultColumnOptions?.draggable ?? false;
 
-  const { columns, colSpanColumns, lastFrozenColumnIndex, frozenRightColumnCount, headerRowsCount } = useMemo((): {
+  const {
+    columns,
+    colSpanColumns,
+    lastFrozenColumnIndex,
+    frozenRightColumnCount,
+    headerRowsCount
+  } = useMemo((): {
     readonly columns: readonly CalculatedColumn<R, SR>[];
     readonly colSpanColumns: readonly CalculatedColumn<R, SR>[];
     readonly lastFrozenColumnIndex: number;
@@ -114,7 +120,7 @@ export function useCalculatedColumns<R, SR>({
           lastFrozenColumnIndex++;
         }
 
-        if(frozenRight) {
+        if (frozenRight) {
           frozenRightColumnCount++;
         }
 
@@ -124,29 +130,34 @@ export function useCalculatedColumns<R, SR>({
       }
     }
 
-    columns.sort(({ key: aKey, frozen: frozenA, frozenRight: frozenRightA  }, { key: bKey, frozen: frozenB, frozenRight: frozenRightB }) => {
-      // Sort select column first:
-      if (aKey === SELECT_COLUMN_KEY) return -1;
-      if (bKey === SELECT_COLUMN_KEY) return 1;
+    columns.sort(
+      (
+        { key: aKey, frozen: frozenA, frozenRight: frozenRightA },
+        { key: bKey, frozen: frozenB, frozenRight: frozenRightB }
+      ) => {
+        // Sort select column first:
+        if (aKey === SELECT_COLUMN_KEY) return -1;
+        if (bKey === SELECT_COLUMN_KEY) return 1;
 
-      // Sort frozen columns second:
-      if (frozenA) {
-        if (frozenB) return 0;
-        return -1;
+        // Sort frozen columns second:
+        if (frozenA) {
+          if (frozenB) return 0;
+          return -1;
+        }
+        if (frozenB) return 1;
+
+        if (frozenRightA) {
+          if (frozenRightB) return 0;
+          return 1;
+        }
+        if (frozenRightB) return -1;
+
+        // TODO: sort columns to keep them grouped if they have a parent
+
+        // Sort other columns last:
+        return 0;
       }
-      if (frozenB) return 1;
-
-       if (frozenRightA) {
-        if (frozenRightB) return 0;
-        return 1;
-      } 
-      if (frozenRightB) return -1;
-
-      // TODO: sort columns to keep them grouped if they have a parent
-
-      // Sort other columns last:
-      return 0;
-    });
+    );
 
     const colSpanColumns: CalculatedColumn<R, SR>[] = [];
     columns.forEach((column, idx) => {
@@ -177,7 +188,13 @@ export function useCalculatedColumns<R, SR>({
     defaultDraggable
   ]);
 
-  const { templateColumns, layoutCssVars, totalFrozenColumnWidth, totalRightFrozenColumnWidth, columnMetrics } = useMemo((): {
+  const {
+    templateColumns,
+    layoutCssVars,
+    totalFrozenColumnWidth,
+    totalRightFrozenColumnWidth,
+    columnMetrics
+  } = useMemo((): {
     templateColumns: readonly string[];
     layoutCssVars: Readonly<Record<string, string>>;
     totalFrozenColumnWidth: number;
@@ -212,14 +229,14 @@ export function useCalculatedColumns<R, SR>({
 
     const layoutCssVars: Record<string, string> = {};
 
-    if(frozenRightColumnCount !== 0) {
+    if (frozenRightColumnCount !== 0) {
       let rightEnd = 0;
-      for(let i=columns.length-1;i>=columns.length-frozenRightColumnCount;i--) {
+      for (let i = columns.length - 1; i >= columns.length - frozenRightColumnCount; i--) {
         const column = columns[i];
         const columnMetric = columnMetrics.get(column)!;
-        totalRightFrozenColumnWidth+=columnMetric.width;
+        totalRightFrozenColumnWidth += columnMetric.width;
         layoutCssVars[`--rdg-frozen-right-${column.idx}`] = `${rightEnd}px`;
-        rightEnd+=columnMetric.width;
+        rightEnd += columnMetric.width;
       }
     }
 
@@ -228,7 +245,13 @@ export function useCalculatedColumns<R, SR>({
       layoutCssVars[`--rdg-frozen-left-${column.idx}`] = `${columnMetrics.get(column)!.left}px`;
     }
 
-    return { templateColumns, layoutCssVars, totalFrozenColumnWidth, totalRightFrozenColumnWidth, columnMetrics };
+    return {
+      templateColumns,
+      layoutCssVars,
+      totalFrozenColumnWidth,
+      totalRightFrozenColumnWidth,
+      columnMetrics
+    };
   }, [getColumnWidth, columns, lastFrozenColumnIndex, frozenRightColumnCount]);
 
   const [colOverscanStartIdx, colOverscanEndIdx] = useMemo((): [number, number] => {
@@ -242,7 +265,7 @@ export function useCalculatedColumns<R, SR>({
     // get first and last non-frozen column indexes
     const lastColIdx = columns.length - 1;
     const firstUnfrozenColumnIdx = min(lastFrozenColumnIndex + 1, lastColIdx);
-    const lastUnfrozonColumnIdx = min(columns.length - frozenRightColumnCount -1, lastColIdx);
+    const lastUnfrozonColumnIdx = min(columns.length - frozenRightColumnCount - 1, lastColIdx);
 
     // skip rendering non-frozen columns if the frozen columns cover the entire viewport
     if (viewportLeft >= viewportRight) {
@@ -278,8 +301,8 @@ export function useCalculatedColumns<R, SR>({
     const colOverscanEndIdx = min(lastUnfrozonColumnIdx, colVisibleEndIdx + 1);
 
     return [colOverscanStartIdx, colOverscanEndIdx];
-  // eslint-disable-next-line react-compiler/react-compiler
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-compiler/react-compiler
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     columnMetrics,
     columns,

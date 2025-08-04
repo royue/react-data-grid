@@ -117,6 +117,11 @@ export function useViewportColumns<R, SR>({
       viewportColumns.push(column);
     }
 
+    for(let colIdx = columns.length-frozenRightColumnCount; colIdx<columns.length; colIdx++) {
+      const column = columns[colIdx];
+      viewportColumns.push(column);
+    }
+
     return viewportColumns;
   }, [startIdx, colOverscanEndIdx, columns, frozenRightColumnCount]);
 }
