@@ -363,7 +363,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     colOverscanEndIdx,
     templateColumns,
     layoutCssVars,
-    totalFrozenColumnWidth
+    totalFrozenColumnWidth,
+    frozenRightColumnCount,
+    totalRightFrozenColumnWidth
   } = useCalculatedColumns({
     rawColumns,
     defaultColumnOptions,
@@ -456,6 +458,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     colOverscanStartIdx,
     colOverscanEndIdx,
     lastFrozenColumnIndex,
+    frozenRightColumnCount,
     rowOverscanStartIdx,
     rowOverscanEndIdx,
     rows,

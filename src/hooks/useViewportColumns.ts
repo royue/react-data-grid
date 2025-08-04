@@ -12,6 +12,7 @@ interface ViewportColumnsArgs<R, SR> {
   colOverscanStartIdx: number;
   colOverscanEndIdx: number;
   lastFrozenColumnIndex: number;
+  frozenRightColumnCount: number;
   rowOverscanStartIdx: number;
   rowOverscanEndIdx: number;
 }
@@ -25,6 +26,7 @@ export function useViewportColumns<R, SR>({
   colOverscanStartIdx,
   colOverscanEndIdx,
   lastFrozenColumnIndex,
+  frozenRightColumnCount,
   rowOverscanStartIdx,
   rowOverscanEndIdx
 }: ViewportColumnsArgs<R, SR>) {
@@ -107,6 +109,11 @@ export function useViewportColumns<R, SR>({
       const column = columns[colIdx];
 
       if (colIdx < startIdx && !column.frozen) continue;
+      viewportColumns.push(column);
+    }
+
+    for(let colIdx = columns.length-frozenRightColumnCount; colIdx<columns.length; colIdx++) {
+      const column = columns[colIdx];
       viewportColumns.push(column);
     }
 

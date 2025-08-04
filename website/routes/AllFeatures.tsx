@@ -290,8 +290,9 @@ export function AllFeatures() {
         onSelectedRowsChange={setSelectedRows}
         className="fill-grid"
         rowClass={(row, index) => {
+          // console.log(" row.id.",  row.id)
           return clsx({
-            [highlightClassname]: row.id.includes('7') || index === 0,
+            [highlightClassname]: [row.id].includes('7') || index === 0,
             [copiedRowClassname]: copiedCell?.row === row
           });
         }}
