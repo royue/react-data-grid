@@ -349,7 +349,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     colOverscanEndIdx,
     templateColumns,
     layoutCssVars,
-    totalFrozenColumnWidth
+    totalFrozenColumnWidth,
+    frozenRightColumnCount
   } = useCalculatedColumns({
     rawColumns,
     defaultColumnOptions,
@@ -464,6 +465,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     colOverscanStartIdx,
     colOverscanEndIdx,
     lastFrozenColumnIndex,
+    frozenRightColumnCount,
     rowOverscanStartIdx,
     rowOverscanEndIdx,
     rows,
@@ -956,7 +958,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         style={dragHandleStyle}
         className={classnames(
           cellDragHandleClassname,
-          column.frozen && cellDragHandleFrozenClassname
+          (column.frozen || column.frozenRight) && cellDragHandleFrozenClassname
         )}
         onPointerDown={handleDragHandlePointerDown}
         onPointerMove={isDragging ? handleDragHandlePointerMove : undefined}

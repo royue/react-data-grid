@@ -19,6 +19,7 @@ interface ViewportColumnsArgs<R, SR> {
   colOverscanStartIdx: number;
   colOverscanEndIdx: number;
   lastFrozenColumnIndex: number;
+  frozenRightColumnCount: number;
   rowOverscanStartIdx: number;
   rowOverscanEndIdx: number;
 }
@@ -32,6 +33,7 @@ export function useViewportColumns<R, SR>({
   colOverscanStartIdx,
   colOverscanEndIdx,
   lastFrozenColumnIndex,
+  frozenRightColumnCount,
   rowOverscanStartIdx,
   rowOverscanEndIdx
 }: ViewportColumnsArgs<R, SR>) {
@@ -97,7 +99,13 @@ export function useViewportColumns<R, SR>({
 
       if (columns.length === lastFrozenColumnIndex + 1) return;
 
-      if (activeColumnIdx > lastFrozenColumnIndex && activeColumnIdx < startIdx) {
+      const firstRightFrozenColumnIndex = columns.length - frozenRightColumnCount;
+
+      if (
+        activeColumnIdx > lastFrozenColumnIndex &&
+        activeColumnIdx < startIdx &&
+        activeColumnIdx < firstRightFrozenColumnIndex
+      ) {
         yield columns[activeColumnIdx];
       }
 
@@ -105,11 +113,18 @@ export function useViewportColumns<R, SR>({
         yield columns[colIdx];
       }
 
-      if (activeColumnIdx > colOverscanEndIdx && activeColumnIdx < columns.length) {
+      if (
+        activeColumnIdx > colOverscanEndIdx &&
+        activeColumnIdx < firstRightFrozenColumnIndex
+      ) {
         yield columns[activeColumnIdx];
       }
+
+      for (let colIdx = firstRightFrozenColumnIndex; colIdx < columns.length; colIdx++) {
+        yield columns[colIdx];
+      }
     },
-    [startIdx, colOverscanEndIdx, columns, lastFrozenColumnIndex]
+    [startIdx, colOverscanEndIdx, columns, lastFrozenColumnIndex, frozenRightColumnCount]
   );
 
   const iterateOverViewportColumnsForRow = useCallback<IterateOverViewportColumnsForRow<R, SR>>(
