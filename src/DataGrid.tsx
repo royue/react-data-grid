@@ -1005,7 +1005,13 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   }
 
   function getCellEditor(rowIdx: number) {
-    if (selectedPosition.rowIdx !== rowIdx || selectedPosition.mode === 'SELECT') return;
+    if (
+      !isCellWithinViewportBounds(selectedPosition) ||
+      selectedPosition.rowIdx !== rowIdx ||
+      selectedPosition.mode === 'SELECT'
+    ) {
+      return;
+    }
 
     const { idx, row } = selectedPosition;
     const column = columns[idx];
