@@ -30,7 +30,7 @@ const cellResizable = css`
 
 const cellResizableClassname = `rdg-cell-resizable ${cellResizable}`;
 
-export const resizeHandleClassname = css`
+const resizeHandle = css`
   @layer rdg.HeaderCell {
     cursor: col-resize;
     position: absolute;
@@ -43,6 +43,8 @@ export const resizeHandleClassname = css`
     }
   }
 `;
+
+const resizeHandleClassname = `rdg-resize-handle ${resizeHandle}`;
 
 const cellDraggableClassname = 'rdg-cell-draggable';
 
