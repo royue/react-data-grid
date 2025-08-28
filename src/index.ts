@@ -15,7 +15,10 @@ export * from './cellRenderers';
 export { default as textEditor } from './editors/textEditor';
 export { default as renderHeaderCell } from './renderHeaderCell';
 export { renderSortIcon, renderSortPriority } from './sortStatus';
-export { useRowSelection, useHeaderRowSelection } from './hooks';
+export { useRowSelection, useHeaderRowSelection, useLatestFunc, useRovingTabIndex} from './hooks';
+export * from "./DataGridDefaultRenderersContext";
+export * from "./utils";
+export * from "./style/row"
 export type {
   CalculatedColumn,
   CalculatedColumnOrColumnGroup,
@@ -52,5 +55,10 @@ export type {
   SelectHeaderRowEvent,
   SelectRowEvent,
   SortColumn,
-  SortDirection
+  SortDirection,
+  CellMouseEventHandler
 } from './types';
+export type {RowSelectionContextValue} from "./hooks/useRowSelection"
+export  {RowSelectionContext} from "./hooks/useRowSelection"
+
+

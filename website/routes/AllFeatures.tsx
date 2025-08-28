@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { faker } from '@faker-js/faker';
 import { css } from '@linaria/core';
 import clsx from 'clsx';
+import AntStyleTreeGrid from "./Tree"
 
 import { DataGrid, SelectColumn, textEditor } from '../../src';
 import type { CalculatedColumn, CellCopyArgs, CellPasteArgs, Column, FillEvent } from '../../src';
@@ -275,7 +276,7 @@ export function AllFeatures() {
        `}
         </style>
       )}
-      <DataGrid
+      {/* <DataGrid
         aria-label="All Features Example"
         columns={columns}
         rows={rows}
@@ -308,7 +309,8 @@ export function AllFeatures() {
             setCopiedCell(null);
           }
         }}
-      />
+      /> */}
+      <AntStyleTreeGrid />
     </>
   );
 }
