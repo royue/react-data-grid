@@ -110,16 +110,15 @@ export function useViewportColumns<R, SR>({
       if ((colIdx < startIdx && !column.frozen) || column.frozenRight) continue;
       viewportColumns.push(column);
     }
-   
-    for(let colIdx = columns.length-frozenRightColumnCount; colIdx<columns.length; colIdx++) {
+
+    for (let colIdx = columns.length - frozenRightColumnCount; colIdx < columns.length; colIdx++) {
       const column = columns[colIdx];
-      if (column.frozenRight)
-      viewportColumns.push(column);
+      if (column.frozenRight) viewportColumns.push(column);
     }
 
-    for(let colIdx = columns.length-frozenRightColumnCount; colIdx<columns.length; colIdx++) {
+    for (let colIdx = columns.length - frozenRightColumnCount; colIdx < columns.length; colIdx++) {
       const column = columns[colIdx];
-      viewportColumns.push(column);
+      if (column.frozenRight) viewportColumns.push(column);
     }
 
     return viewportColumns;

@@ -13,3 +13,4 @@ npm-debug.log
 .vitest-attachments
 
 __traces__
+*.tgz
