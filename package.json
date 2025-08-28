@@ -1,6 +1,6 @@
 {
   "name": "react-data-grid",
-  "version": "7.0.4",
+  "version": "7.0.11",
   "license": "MIT",
   "description": "Feature-rich and customizable data grid React component",
   "keywords": [
@@ -49,6 +49,7 @@
     "postpublish": "git push --follow-tags origin HEAD"
   },
   "dependencies": {
+    "antd": "^5.27.0",
     "clsx": "^2.0.0",
     "react-window": "^1.8.11"
   },
@@ -83,6 +84,7 @@
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
     "playwright": "^1.54.2",
+    "lodash": "^4.17.21",
     "postcss": "^8.5.2",
     "prettier": "3.6.2",
     "react": "^18.3.1",

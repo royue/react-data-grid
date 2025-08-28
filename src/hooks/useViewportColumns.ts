@@ -108,15 +108,16 @@ export function useViewportColumns<R, SR>({
     for (let colIdx = 0; colIdx <= colOverscanEndIdx; colIdx++) {
       const column = columns[colIdx];
 
-      if (colIdx < startIdx && !column.frozen) continue;
+      if ((colIdx < startIdx && !column.frozen) || column.frozenRight) continue;
       viewportColumns.push(column);
     }
-
+   
     for(let colIdx = columns.length-frozenRightColumnCount; colIdx<columns.length; colIdx++) {
       const column = columns[colIdx];
+      if (column.frozenRight)
       viewportColumns.push(column);
     }
 
     return viewportColumns;
-  }, [startIdx, colOverscanEndIdx, columns]);
+  }, [startIdx, colOverscanEndIdx, columns, frozenRightColumnCount]);
 }

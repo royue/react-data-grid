@@ -9,3 +9,4 @@ __screenshots__
 npm-debug.log
 **.orig
 .idea
+*.tgz

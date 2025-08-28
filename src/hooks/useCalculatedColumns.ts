@@ -242,7 +242,7 @@ export function useCalculatedColumns<R, SR>({
     // get first and last non-frozen column indexes
     const lastColIdx = columns.length - 1;
     const firstUnfrozenColumnIdx = min(lastFrozenColumnIndex + 1, lastColIdx);
-     const lastUnfrozonColumnIdx = min(columns.length - frozenRightColumnCount -1, lastColIdx);
+    const lastUnfrozonColumnIdx = min(columns.length - frozenRightColumnCount -1, lastColIdx);
 
     // skip rendering non-frozen columns if the frozen columns cover the entire viewport
     if (viewportLeft >= viewportRight) {
@@ -278,6 +278,8 @@ export function useCalculatedColumns<R, SR>({
     const colOverscanEndIdx = min(lastUnfrozonColumnIdx, colVisibleEndIdx + 1);
 
     return [colOverscanStartIdx, colOverscanEndIdx];
+  // eslint-disable-next-line react-compiler/react-compiler
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     columnMetrics,
     columns,
