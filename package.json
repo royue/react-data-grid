@@ -70,7 +70,7 @@
     "@vitejs/plugin-react-oxc": "^0.3.0",
     "@tanstack/react-router": "^1.132.31",
     "@tanstack/router-plugin": "^1.132.31",
-    "@types/node": "^24.6.2",
+    "@types/node": "^24.8.0",
     "@typescript-eslint/eslint-plugin": "^8.39.1",
     "@typescript-eslint/parser": "^8.39.1",
     "@vitejs/plugin-react": "5.0.2",
