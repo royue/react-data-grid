@@ -1,6 +1,12 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "assist": { "actions": { "source": { "organizeImports": "off" } } },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
+    }
+  },
   "files": {
     "includes": [
       "**",
@@ -17,7 +23,15 @@
     ]
   },
   "formatter": {
-    "enabled": false
+    "enabled": false,
+    "includes": [
+      "**",
+      "!**/*.ts",
+      "!**/*.tsx",
+      "!package.json"
+    ],
+    "indentStyle": "space",
+    "lineWidth": 100
   },
   "json": {
     "parser": {
@@ -218,11 +232,15 @@
           "options": {
             "paths": {
               "react": {
-                "importNames": ["default"],
+                "importNames": [
+                  "default"
+                ],
                 "message": "Use named imports instead."
               },
               "react-dom": {
-                "importNames": ["default"],
+                "importNames": [
+                  "default"
+                ],
                 "message": "Use named imports instead."
               }
             }
@@ -351,7 +369,9 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.test.*"],
+      "includes": [
+        "**/*.test.*"
+      ],
       "linter": {
         "rules": {
           "performance": {
@@ -361,7 +381,10 @@
       }
     },
     {
-      "includes": ["**/*.js", "**/rolldown.config.ts"],
+      "includes": [
+        "**/*.js",
+        "**/rolldown.config.ts"
+      ],
       "linter": {
         "rules": {
           "correctness": {
@@ -376,10 +399,14 @@
     {
       "assist": {
         "actions": {
-          "source": { "useSortedKeys": "on" }
+          "source": {
+            "useSortedKeys": "on"
+          }
         }
       },
-      "includes": ["./biome.json"]
+      "includes": [
+        "./biome.json"
+      ]
     }
   ]
 }

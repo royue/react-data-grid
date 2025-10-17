@@ -635,15 +635,6 @@ declare module './routes/ScrollToCell' {
     FileRoutesByPath['/ScrollToCell']['fullPath']
   >
 }
-declare module './routes/Tree' {
-  const createFileRoute: CreateFileRoute<
-    '/Tree',
-    FileRoutesByPath['/Tree']['parentRoute'],
-    FileRoutesByPath['/Tree']['id'],
-    FileRoutesByPath['/Tree']['path'],
-    FileRoutesByPath['/Tree']['fullPath']
-  >
-}
 declare module './routes/TreeView' {
   const createFileRoute: CreateFileRoute<
     '/TreeView',

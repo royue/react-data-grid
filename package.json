@@ -1,6 +1,6 @@
 {
   "name": "react-data-grid",
-  "version": "7.0.11",
+  "version": "7.0.14",
   "license": "MIT",
   "description": "Feature-rich and customizable data grid React component",
   "keywords": [
@@ -52,8 +52,11 @@
     "postpublish": "git push --follow-tags origin HEAD"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/modifiers": "^9.0.0",
     "antd": "^5.27.0",
     "clsx": "^2.0.0",
+    "react-refresh": "^0.17.0",
     "react-window": "^1.8.11"
   },
   "dependencies": {
@@ -88,6 +91,14 @@
     "clsx": "^2.1.1",
     "ecij": "^0.3.0",
     "eslint": "^9.39.1",
+    "@linaria/babel-preset": "^5.0.4",
+    "@linaria/core": "^6.3.0",
+    "@linaria/react": "^6.3.0",
+    "@linaria/vite": "^5.0.4",
+    "@vitest/browser": "^3.2.4",
+    "@wyw-in-js/babel-preset": "^0.7.0",
+    "@wyw-in-js/rollup": "^0.7.0",
+    "@wyw-in-js/vite": "^0.7.0",
     "eslint-plugin-jest-dom": "^5.5.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
