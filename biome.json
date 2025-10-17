@@ -16,7 +16,12 @@
     ]
   },
   "formatter": {
-    "includes": ["**", "!**/*.ts", "!**/*.tsx", "!package.json"],
+    "includes": [
+      "**",
+      "!**/*.ts",
+      "!**/*.tsx",
+      "!package.json"
+    ],
     "indentStyle": "space",
     "lineWidth": 100
   },
@@ -229,11 +234,15 @@
           "options": {
             "paths": {
               "react": {
-                "importNames": ["default"],
+                "importNames": [
+                  "default"
+                ],
                 "message": "Use named imports instead."
               },
               "react-dom": {
-                "importNames": ["default"],
+                "importNames": [
+                  "default"
+                ],
                 "message": "Use named imports instead."
               }
             }
@@ -361,10 +370,18 @@
       }
     }
   },
-  "assist": { "actions": { "source": { "organizeImports": "off" } } },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
+    }
+  },
   "overrides": [
     {
-      "includes": ["**/*.test.*"],
+      "includes": [
+        "**/*.test.*"
+      ],
       "linter": {
         "rules": {
           "performance": {
@@ -374,7 +391,10 @@
       }
     },
     {
-      "includes": ["**/*.js", "**/rolldown.config.ts"],
+      "includes": [
+        "**/*.js",
+        "**/rolldown.config.ts"
+      ],
       "linter": {
         "rules": {
           "correctness": {

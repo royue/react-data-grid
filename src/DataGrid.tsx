@@ -127,6 +127,7 @@ type SharedDivProps = Pick<
 
 export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends SharedDivProps {
   ref?: Maybe<React.Ref<DataGridHandle>>;
+  wrapperRef?: Maybe<React.Ref<DataGridHandle>>;
   /**
    * Grid and data Props
    */
@@ -249,6 +250,7 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
 export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridProps<R, SR, K>) {
   const {
     ref,
+    wrapperRef,
     // Grid and data Props
     columns: rawColumns,
     rows,
@@ -534,7 +536,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
   }, [shouldFocusCell, focusCell, selectedPosition.idx]);
 
-  useImperativeHandle(ref, () => ({
+  useImperativeHandle(ref ?? wrapperRef, () => ({
     element: gridRef.current,
     scrollToCell({ idx, rowIdx }) {
       const scrollToIdx =

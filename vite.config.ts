@@ -64,9 +64,11 @@ export default defineConfig(({ command, isPreview }) => ({
         verboseFileRoutes: false
       }),
     react({
-      exclude: ['./.cache/**/*']
+      exclude: ['./.cache/**/*'],
+      jsxRuntime: 'automatic'
     }),
     wyw({
+      // jsx: false
       exclude: ['./.cache/**/*', '**/*.d.ts', '**/*.gen.ts'],
       preprocessor: 'none',
       displayName: command === 'serve'
