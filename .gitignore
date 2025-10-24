@@ -10,3 +10,6 @@ npm-debug.log
 **.orig
 .idea
 *.tgz
+.vitest-attachments
+
+__traces__
