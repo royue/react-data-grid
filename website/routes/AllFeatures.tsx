@@ -4,9 +4,9 @@ import { css } from '@linaria/core';
 import clsx from 'clsx';
 import AntStyleTreeGrid from "./Tree"
 
-import { DataGrid, SelectColumn, textEditor } from '../../src';
+import { DataGrid, renderTextEditor, SelectColumn } from '../../src';
 import type { CalculatedColumn, CellCopyArgs, CellPasteArgs, Column, FillEvent } from '../../src';
-import { textEditorClassname } from '../../src/editors/textEditor';
+import { textEditorClassname } from '../../src/editors/renderTextEditor';
 import { useDirection } from '../directionContext';
 
 export const Route = createFileRoute({
@@ -133,7 +133,7 @@ const columns: readonly Column<Row>[] = [
     width: 200,
     resizable: true,
     frozen: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'lastName',
@@ -141,63 +141,63 @@ const columns: readonly Column<Row>[] = [
     width: 200,
     resizable: true,
     frozen: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'email',
     name: 'Email',
     width: 'max-content',
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'street',
     name: 'Street',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'zipCode',
     name: 'ZipCode',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'date',
     name: 'Date',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'bs',
     name: 'bs',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'catchPhrase',
     name: 'Catch Phrase',
     width: 'max-content',
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'companyName',
     name: 'Company Name',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'sentence',
     name: 'Sentence',
     width: 'max-content',
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   }
 ];
 
