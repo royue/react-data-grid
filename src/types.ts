@@ -163,7 +163,8 @@ export interface RenderHeaderCellProps<TRow, TSummaryRow = unknown> {
 }
 
 interface BaseCellRendererProps<TRow, TSummaryRow = unknown>
-  extends Omit<React.ComponentProps<'div'>, 'children'>,
+  extends
+    Omit<React.ComponentProps<'div'>, 'children'>,
     Pick<
       DataGridProps<TRow, TSummaryRow>,
       'onCellMouseDown' | 'onCellClick' | 'onCellDoubleClick' | 'onCellContextMenu'
@@ -172,8 +173,10 @@ interface BaseCellRendererProps<TRow, TSummaryRow = unknown>
   selectCell: (position: Position, options?: SelectCellOptions) => void;
 }
 
-export interface CellRendererProps<TRow, TSummaryRow>
-  extends BaseCellRendererProps<TRow, TSummaryRow> {
+export interface CellRendererProps<TRow, TSummaryRow> extends BaseCellRendererProps<
+  TRow,
+  TSummaryRow
+> {
   column: CalculatedColumn<TRow, TSummaryRow>;
   row: TRow;
   colSpan: number | undefined;
@@ -231,8 +234,10 @@ export type CellMouseEventHandler<R, SR> = Maybe<
   (args: CellMouseArgs<NoInfer<R>, NoInfer<SR>>, event: CellMouseEvent) => void
 >;
 
-export interface BaseRenderRowProps<TRow, TSummaryRow = unknown>
-  extends BaseCellRendererProps<TRow, TSummaryRow> {
+export interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCellRendererProps<
+  TRow,
+  TSummaryRow
+> {
   viewportColumns: readonly CalculatedColumn<TRow, TSummaryRow>[];
   rowIdx: number;
   selectedCellIdx: number | undefined;
@@ -241,8 +246,10 @@ export interface BaseRenderRowProps<TRow, TSummaryRow = unknown>
   gridRowStart: number;
 }
 
-export interface RenderRowProps<TRow, TSummaryRow = unknown>
-  extends BaseRenderRowProps<TRow, TSummaryRow> {
+export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderRowProps<
+  TRow,
+  TSummaryRow
+> {
   row: TRow;
   lastFrozenColumnIndex: number;
   draggedOverCellIdx: number | undefined;
@@ -319,11 +326,10 @@ export interface RenderSortPriorityProps {
 
 export interface RenderSortStatusProps extends RenderSortIconProps, RenderSortPriorityProps {}
 
-export interface RenderCheckboxProps
-  extends Pick<
-    React.ComponentProps<'input'>,
-    'aria-label' | 'aria-labelledby' | 'checked' | 'tabIndex' | 'disabled'
-  > {
+export interface RenderCheckboxProps extends Pick<
+  React.ComponentProps<'input'>,
+  'aria-label' | 'aria-labelledby' | 'checked' | 'tabIndex' | 'disabled'
+> {
   indeterminate?: boolean | undefined;
   onChange: (checked: boolean, shift: boolean) => void;
 }
