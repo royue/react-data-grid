@@ -201,9 +201,9 @@ const columns: readonly Column<Row>[] = [
   }
 ];
 
-export function AllFeatures() {
+function AllFeatures() {
   const direction = useDirection();
-  const initialRows = [{id: 1}, {id: 2}] as unknown;
+  const initialRows = Route.useLoaderData();
   const [rows, setRows] = useState(initialRows);
   const [selectedRows, setSelectedRows] = useState((): ReadonlySet<string> => new Set());
   const [copiedCell, setCopiedCell] = useState<{
@@ -291,9 +291,8 @@ export function AllFeatures() {
         onSelectedRowsChange={setSelectedRows}
         className="fill-grid"
         rowClass={(row, index) => {
-          // console.log(" row.id.",  row.id)
           return clsx({
-            [highlightClassname]: [row.id].includes('7') || index === 0,
+            [highlightClassname]: row.id.includes('7') || index === 0,
             [copiedRowClassname]: copiedCell?.row === row
           });
         }}
