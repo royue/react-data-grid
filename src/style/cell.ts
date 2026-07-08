@@ -1,4 +1,4 @@
-import { css } from '@linaria/core';
+import { css } from 'ecij';
 
 export const cell = css`
   @layer rdg.Cell {
@@ -13,7 +13,6 @@ export const cell = css`
     padding-inline: 8px;
     border-inline-end: var(--rdg-border-width) solid var(--rdg-border-color);
     border-block-end: var(--rdg-border-width) solid var(--rdg-border-color);
-    grid-row-start: var(--rdg-grid-row-start);
     align-content: center;
     background-color: inherit;
 
@@ -36,11 +35,6 @@ export const cellFrozen = css`
     position: sticky;
     /* Should have a higher value than 0 to show up above unfrozen cells */
     z-index: 1;
-
-    /* Add box-shadow on the last frozen cell */
-    &:nth-last-child(1 of &) {
-      box-shadow: var(--rdg-cell-frozen-box-shadow);
-    }
   }
 `;
 
@@ -51,15 +45,14 @@ export const cellRightFrozen = css`
     position: sticky;
     /* Should have a higher value than 0 to show up above unfrozen cells */
     z-index: 1;
-    right: 0;
-    /* Add box-shadow on the last frozen cell */
+    /* Add box-shadow on the first right frozen cell */
     &:nth-child(1 of &) {
       box-shadow: var(--rdg-cell-right-frozen-box-shadow);
     }
   }
 `;
 
-export const cellRightFrozenClassname = `rdg-cell-frozen ${cellRightFrozen}`;
+export const cellRightFrozenClassname = `rdg-cell-frozen-right ${cellRightFrozen}`;
 
 const cellDragHandle = css`
   @layer rdg.DragHandle {

@@ -8,6 +8,28 @@ export function scrollIntoView(element: Maybe<Element>, behavior: ScrollBehavior
   element?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior });
 }
 
-export function scrollIntoViewV2(element: Maybe<Element>, behavior: ScrollBehavior = 'instant') {
-  element?.scrollIntoView({ inline: 'center', block: 'center', behavior });
+function getRowToScroll(gridEl: HTMLDivElement) {
+  return gridEl.querySelector<HTMLDivElement>('& > [role="row"][tabindex="0"]');
+}
+
+export function getCellToScroll(gridEl: HTMLDivElement) {
+  return gridEl.querySelector<HTMLDivElement>('& > [role="row"] > [tabindex="0"]');
+}
+
+function focusElement(element: HTMLDivElement | null, shouldScroll: boolean) {
+  if (element === null) return;
+
+  if (shouldScroll) {
+    scrollIntoView(element);
+  }
+
+  element.focus({ preventScroll: true });
+}
+
+export function focusRow(gridEl: HTMLDivElement) {
+  focusElement(getRowToScroll(gridEl), true);
+}
+
+export function focusCell(gridEl: HTMLDivElement, shouldScroll = true) {
+  focusElement(getCellToScroll(gridEl), shouldScroll);
 }

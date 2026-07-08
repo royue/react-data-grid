@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { faker } from '@faker-js/faker';
-import { css } from '@linaria/core';
+import { createFileRoute } from '@tanstack/react-router';
+import { css } from 'ecij';
 import clsx from 'clsx';
-import AntStyleTreeGrid from "./Tree"
 
-import { DataGrid, SelectColumn, textEditor } from '../../src';
+import { DataGrid, renderTextEditor, SelectColumn } from '../../src';
 import type { CalculatedColumn, CellCopyArgs, CellPasteArgs, Column, FillEvent } from '../../src';
-import { textEditorClassname } from '../../src/editors/textEditor';
+import { textEditorClassname } from '../../src/editors/renderTextEditor';
 import { useDirection } from '../directionContext';
 
-export const Route = createFileRoute({
+export const Route = createFileRoute('/AllFeatures')({
   component: AllFeatures,
   loader() {
     rows ??= createRows();
@@ -133,7 +133,7 @@ const columns: readonly Column<Row>[] = [
     width: 200,
     resizable: true,
     frozen: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'lastName',
@@ -141,69 +141,69 @@ const columns: readonly Column<Row>[] = [
     width: 200,
     resizable: true,
     frozen: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'email',
     name: 'Email',
     width: 'max-content',
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'street',
     name: 'Street',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'zipCode',
     name: 'ZipCode',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'date',
     name: 'Date',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'bs',
     name: 'bs',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'catchPhrase',
     name: 'Catch Phrase',
     width: 'max-content',
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'companyName',
     name: 'Company Name',
     width: 200,
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   },
   {
     key: 'sentence',
     name: 'Sentence',
     width: 'max-content',
     resizable: true,
-    renderEditCell: textEditor
+    renderEditCell: renderTextEditor
   }
 ];
 
-export function AllFeatures() {
+function AllFeatures() {
   const direction = useDirection();
-  const initialRows = [{id: 1}, {id: 2}] as unknown;
+  const initialRows = Route.useLoaderData();
   const [rows, setRows] = useState(initialRows);
   const [selectedRows, setSelectedRows] = useState((): ReadonlySet<string> => new Set());
   const [copiedCell, setCopiedCell] = useState<{
@@ -276,7 +276,7 @@ export function AllFeatures() {
        `}
         </style>
       )}
-      {/* <DataGrid
+      <DataGrid
         aria-label="All Features Example"
         columns={columns}
         rows={rows}
@@ -291,9 +291,8 @@ export function AllFeatures() {
         onSelectedRowsChange={setSelectedRows}
         className="fill-grid"
         rowClass={(row, index) => {
-          // console.log(" row.id.",  row.id)
           return clsx({
-            [highlightClassname]: [row.id].includes('7') || index === 0,
+            [highlightClassname]: row.id.includes('7') || index === 0,
             [copiedRowClassname]: copiedCell?.row === row
           });
         }}
@@ -301,7 +300,7 @@ export function AllFeatures() {
         onCellClick={(args, event) => {
           if (args.column.key === 'title') {
             event.preventGridDefault();
-            args.selectCell(true);
+            args.setActivePosition(true);
           }
         }}
         onCellKeyDown={(_, event) => {
@@ -309,8 +308,7 @@ export function AllFeatures() {
             setCopiedCell(null);
           }
         }}
-      /> */}
-      <AntStyleTreeGrid />
+      />
     </>
   );
 }

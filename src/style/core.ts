@@ -1,33 +1,7 @@
-import { css } from '@linaria/core';
+import { css } from 'ecij';
 
 import { cell } from './cell';
 import { bottomSummaryRowClassname, row, topSummaryRowClassname } from './row';
-
-const lightTheme = `
-  --rdg-color: #000;
-  --rdg-border-color: #ddd;
-  --rdg-summary-border-color: #aaa;
-  --rdg-background-color: hsl(0deg 0% 100%);
-  --rdg-header-background-color: hsl(0deg 0% 97.5%);
-  --rdg-header-draggable-background-color: hsl(0deg 0% 90.5%);
-  --rdg-row-hover-background-color: hsl(0deg 0% 96%);
-  --rdg-row-selected-background-color: var(--ant-color-primary-bg, hsl(207deg 76% 92%));
-  --rdg-row-selected-hover-background-color: var(--ant-color-primary-bg-hover, hsl(207deg 76% 88%));
-  --rdg-checkbox-focus-color: hsl(207deg 100% 69%);
-`;
-
-const darkTheme = `
-  --rdg-color: #ddd;
-  --rdg-border-color: #444;
-  --rdg-summary-border-color: #555;
-  --rdg-background-color: hsl(0deg 0% 13%);
-  --rdg-header-background-color: hsl(0deg 0% 10.5%);
-  --rdg-header-draggable-background-color: hsl(0deg 0% 17.5%);
-  --rdg-row-hover-background-color: hsl(0deg 0% 9%);
-  --rdg-row-selected-background-color: var(--ant-color-primary-bg, hsl(207deg 76% 42%));
-  --rdg-row-selected-hover-background-color: var(--ant-color-primary-bg-hover, hsl(207deg 76% 38%));
-  --rdg-checkbox-focus-color: hsl(207deg 100% 89%);
-`;
 
 const root = css`
   @layer rdg.Defaults {
@@ -42,7 +16,6 @@ const root = css`
     --rdg-selection-width: 2px;
     --rdg-selection-color: var(--ant-color-primary, hsl(207, 75%, 66%));
     --rdg-font-size: 14px;
-    --rdg-cell-frozen-box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
     --rdg-cell-right-frozen-box-shadow: -2px 0 5px -2px rgba(136, 136, 136, 0.3);
     --rdg-border-width: 1px;
     --rdg-summary-border-width: calc(var(--rdg-border-width) * 2);
@@ -53,28 +26,30 @@ const root = css`
     --rdg-header-background-color: light-dark(hsl(0deg 0% 97.5%), hsl(0deg 0% 10.5%));
     --rdg-header-draggable-background-color: light-dark(hsl(0deg 0% 90.5%), hsl(0deg 0% 17.5%));
     --rdg-row-hover-background-color: light-dark(hsl(0deg 0% 96%), hsl(0deg 0% 9%));
-    --rdg-row-selected-background-color: light-dark(hsl(207deg 76% 92%), hsl(207deg 76% 42%));
-    --rdg-row-selected-hover-background-color: light-dark(hsl(207deg 76% 88%), hsl(207deg 76% 38%));
+    --rdg-row-selected-background-color: light-dark(
+      var(--ant-color-primary-bg, hsl(207deg 76% 92%)),
+      var(--ant-color-primary-bg, hsl(207deg 76% 42%))
+    );
+    --rdg-row-selected-hover-background-color: light-dark(
+      var(--ant-color-primary-bg-hover, hsl(207deg 76% 88%)),
+      var(--ant-color-primary-bg-hover, hsl(207deg 76% 38%))
+    );
     --rdg-checkbox-focus-color: hsl(207deg 100% 69%);
 
     &.rdg-dark {
-      --rdg-color-scheme: dark;
+      color-scheme: dark;
     }
 
     &.rdg-light {
-      --rdg-color-scheme: light;
+      color-scheme: light;
     }
 
-    color-scheme: var(--rdg-color-scheme, light dark);
-
     &:dir(rtl) {
-      --rdg-cell-frozen-box-shadow: -2px 0 5px -2px rgba(136, 136, 136, 0.3);
       --rdg-cell-right-frozen-box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
     }
 
     display: grid;
 
-    color-scheme: var(--rdg-color-scheme, light dark);
     accent-color: light-dark(
       var(--ant-color-primary, hsl(207deg 100% 29%)),
       var(--ant-color-primary, hsl(207deg 100% 79%))
@@ -92,12 +67,15 @@ const root = css`
     background-color: var(--rdg-background-color);
     color: var(--rdg-color);
     font-size: var(--rdg-font-size);
+    font-variant-numeric: tabular-nums;
+
+    container-name: rdg-root;
+    container-type: scroll-state;
 
     /* needed on Firefox to fix scrollbars */
     &::before {
       content: '';
-      grid-column: 1/-1;
-      grid-row: 1/-1;
+      grid-area: -2 / -2 / -1 / -1;
     }
 
     > :nth-last-child(1 of .${topSummaryRowClassname}) {
@@ -128,18 +106,34 @@ const viewportDragging = css`
 
 export const viewportDraggingClassname = `rdg-viewport-dragging ${viewportDragging}`;
 
-export const focusSinkClassname = css`
-  @layer rdg.FocusSink {
-    grid-column: 1/-1;
-    pointer-events: none;
-    /* Should have a higher value than 1 to show up above regular frozen cells */
-    z-index: 1;
+// Add shadow after the last frozen cell
+export const frozenColumnShadowClassname = css`
+  position: sticky;
+  width: 10px;
+  background-image: linear-gradient(
+    to right,
+    light-dark(rgb(0 0 0 / 15%), rgb(0 0 0 / 40%)),
+    transparent
+  );
+  pointer-events: none;
+  z-index: 1;
+
+  opacity: 1;
+  transition: opacity 0.1s;
+
+  /* TODO: reverse 'opacity' and remove 'not' */
+  @container rdg-root not scroll-state(scrollable: inline-start) {
+    opacity: 0;
+  }
+
+  &:dir(rtl) {
+    transform: scaleX(-1);
   }
 `;
 
-export const focusSinkHeaderAndSummaryClassname = css`
-  @layer rdg.FocusSink {
-    /* Should have a higher value than 3 to show up above header and summary rows */
-    z-index: 3;
-  }
+const topShadowClassname = css`
+  /* render above header and summary rows */
+  z-index: 2;
 `;
+
+export const frozenColumnShadowTopClassname = `${frozenColumnShadowClassname} ${topShadowClassname}`;
