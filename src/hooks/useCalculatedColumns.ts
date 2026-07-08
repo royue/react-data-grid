@@ -1,8 +1,14 @@
 import { useMemo } from 'react';
 
-import { clampColumnWidth, max, min } from '../utils';
-import type { CalculatedColumn, CalculatedColumnParent, ColumnOrColumnGroup, Omit } from '../types';
-import { renderValue } from '../cellRenderers';
+import { clampColumnWidth, max, min } from '../utils/index';
+import type {
+  CalculatedColumn,
+  CalculatedColumnParent,
+  Column,
+  ColumnOrColumnGroup,
+  Omit
+} from '../types';
+import { renderValue } from '../cellRenderers/index';
 import { SELECT_COLUMN_KEY } from '../Columns';
 import type { DataGridProps } from '../DataGrid';
 import renderHeaderCell from '../renderHeaderCell';
@@ -19,6 +25,7 @@ type MutableCalculatedColumnParent<R, SR> = Omit<Mutable<CalculatedColumnParent<
   WithParent<R, SR>;
 type MutableCalculatedColumn<R, SR> = Omit<Mutable<CalculatedColumn<R, SR>>, 'parent'> &
   WithParent<R, SR>;
+type RenderHeaderCell<R, SR> = NonNullable<Column<R, SR>['renderHeaderCell']>;
 
 interface ColumnMetric {
   width: number;
@@ -49,148 +56,156 @@ export function useCalculatedColumns<R, SR>({
   const defaultMinWidth = defaultColumnOptions?.minWidth ?? DEFAULT_COLUMN_MIN_WIDTH;
   const defaultMaxWidth = defaultColumnOptions?.maxWidth ?? undefined;
   const defaultRenderCell = defaultColumnOptions?.renderCell ?? renderValue;
-  const defaultRenderHeaderCell = defaultColumnOptions?.renderHeaderCell ?? renderHeaderCell;
+  const defaultRenderHeaderCell: RenderHeaderCell<R, SR> =
+    defaultColumnOptions?.renderHeaderCell ?? (renderHeaderCell as RenderHeaderCell<R, SR>);
   const defaultSortable = defaultColumnOptions?.sortable ?? false;
   const defaultResizable = defaultColumnOptions?.resizable ?? false;
   const defaultDraggable = defaultColumnOptions?.draggable ?? false;
 
-  const { columns, colSpanColumns, lastFrozenColumnIndex, frozenRightColumnCount, headerRowsCount } =
-    useMemo((): {
-      readonly columns: readonly CalculatedColumn<R, SR>[];
-      readonly colSpanColumns: readonly CalculatedColumn<R, SR>[];
-      readonly lastFrozenColumnIndex: number;
-      readonly frozenRightColumnCount: number;
-      readonly headerRowsCount: number;
-    } => {
-      let lastFrozenColumnIndex = -1;
-      let frozenRightColumnCount = 0;
-      let headerRowsCount = 1;
-      const columns: MutableCalculatedColumn<R, SR>[] = [];
+  const {
+    columns,
+    colSpanColumns,
+    lastFrozenColumnIndex,
+    frozenRightColumnCount,
+    headerRowsCount
+  } = useMemo((): {
+    readonly columns: readonly CalculatedColumn<R, SR>[];
+    readonly colSpanColumns: readonly CalculatedColumn<R, SR>[];
+    readonly lastFrozenColumnIndex: number;
+    readonly frozenRightColumnCount: number;
+    readonly headerRowsCount: number;
+  } => {
+    let lastFrozenColumnIndex = -1;
+    let frozenRightColumnCount = 0;
+    let headerRowsCount = 1;
+    const columns: MutableCalculatedColumn<R, SR>[] = [];
 
-      collectColumns(rawColumns, 1);
+    collectColumns(rawColumns, 1);
 
-      function collectColumns(
-        rawColumns: readonly ColumnOrColumnGroup<R, SR>[],
-        level: number,
-        parent?: MutableCalculatedColumnParent<R, SR>
-      ) {
-        for (const rawColumn of rawColumns) {
-          if ('children' in rawColumn) {
-            const calculatedColumnParent: MutableCalculatedColumnParent<R, SR> = {
-              name: rawColumn.name,
-              parent,
-              idx: -1,
-              colSpan: 0,
-              level: 0,
-              headerCellClass: rawColumn.headerCellClass
-            };
-
-            collectColumns(rawColumn.children, level + 1, calculatedColumnParent);
-            continue;
-          }
-
-          const frozen = rawColumn.frozen ?? false;
-          const frozenRight = !frozen && (rawColumn.frozenRight ?? false);
-
-          const column: MutableCalculatedColumn<R, SR> = {
-            ...rawColumn,
+    function collectColumns(
+      rawColumns: readonly ColumnOrColumnGroup<R, SR>[],
+      level: number,
+      parent?: MutableCalculatedColumnParent<R, SR>
+    ) {
+      for (const rawColumn of rawColumns) {
+        if ('children' in rawColumn) {
+          const calculatedColumnParent: MutableCalculatedColumnParent<R, SR> = {
+            name: rawColumn.name,
             parent,
-            idx: 0,
+            idx: -1,
+            colSpan: 0,
             level: 0,
-            frozen,
-            frozenRight,
-            width: rawColumn.width ?? defaultWidth,
-            minWidth: rawColumn.minWidth ?? defaultMinWidth,
-            maxWidth: rawColumn.maxWidth ?? defaultMaxWidth,
-            sortable: rawColumn.sortable ?? defaultSortable,
-            resizable: rawColumn.resizable ?? defaultResizable,
-            draggable: rawColumn.draggable ?? defaultDraggable,
-            renderCell: rawColumn.renderCell ?? defaultRenderCell,
-            renderHeaderCell: rawColumn.renderHeaderCell ?? defaultRenderHeaderCell
+            headerCellClass: rawColumn.headerCellClass
           };
 
-          columns.push(column);
+          collectColumns(rawColumn.children, level + 1, calculatedColumnParent);
+          continue;
+        }
 
-          if (frozen) {
-            lastFrozenColumnIndex++;
-          }
+        const frozen = rawColumn.frozen ?? false;
+        const frozenRight = !frozen && (rawColumn.frozenRight ?? false);
 
-          if (frozenRight) {
-            frozenRightColumnCount++;
-          }
+        const column: MutableCalculatedColumn<R, SR> = {
+          ...rawColumn,
+          parent,
+          idx: 0,
+          level: 0,
+          frozen,
+          frozenRight,
+          width: rawColumn.width ?? defaultWidth,
+          minWidth: rawColumn.minWidth ?? defaultMinWidth,
+          maxWidth: rawColumn.maxWidth ?? defaultMaxWidth,
+          sortable: rawColumn.sortable ?? defaultSortable,
+          resizable: rawColumn.resizable ?? defaultResizable,
+          draggable: rawColumn.draggable ?? defaultDraggable,
+          renderCell: rawColumn.renderCell ?? defaultRenderCell,
+          renderHeaderCell: rawColumn.renderHeaderCell ?? defaultRenderHeaderCell
+        };
 
-          if (level > headerRowsCount) {
-            headerRowsCount = level;
-          }
+        columns.push(column);
+
+        if (frozen) {
+          lastFrozenColumnIndex++;
+        }
+
+        if (frozenRight) {
+          frozenRightColumnCount++;
+        }
+
+        if (level > headerRowsCount) {
+          headerRowsCount = level;
         }
       }
+    }
 
-      columns.sort((columnA, columnB) => {
-        const { key: aKey, frozen: frozenA, frozenRight: frozenRightA } = columnA;
-        const { key: bKey, frozen: frozenB, frozenRight: frozenRightB } = columnB;
+    columns.sort((columnA, columnB) => {
+      const { key: aKey, frozen: frozenA, frozenRight: frozenRightA } = columnA;
+      const { key: bKey, frozen: frozenB, frozenRight: frozenRightB } = columnB;
 
-        // Sort select column first:
-        if (aKey === SELECT_COLUMN_KEY) return -1;
-        if (bKey === SELECT_COLUMN_KEY) return 1;
+      // Sort select column first:
+      if (aKey === SELECT_COLUMN_KEY) return -1;
+      if (bKey === SELECT_COLUMN_KEY) return 1;
 
-        // Sort frozen columns second:
-        if (frozenA) {
-          if (frozenB) return 0;
-          return -1;
-        }
-        if (frozenB) return 1;
+      // Sort frozen columns second:
+      if (frozenA) {
+        if (frozenB) return 0;
+        return -1;
+      }
+      if (frozenB) return 1;
 
-        // Sort right frozen columns last:
-        if (frozenRightA) {
-          if (frozenRightB) return 0;
-          return 1;
-        }
-        if (frozenRightB) return -1;
+      // Sort right frozen columns last:
+      if (frozenRightA) {
+        if (frozenRightB) return 0;
+        return 1;
+      }
+      if (frozenRightB) return -1;
 
-        // TODO: sort columns to keep them grouped if they have a parent
+      // TODO: sort columns to keep them grouped if they have a parent
 
-        // Sort other columns last:
-        return 0;
-      });
+      // Sort other columns last:
+      return 0;
+    });
 
-      const colSpanColumns: CalculatedColumn<R, SR>[] = [];
-      columns.forEach((column, idx) => {
-        column.idx = idx;
-        updateColumnParent(column, idx, 0);
+    const colSpanColumns: CalculatedColumn<R, SR>[] = [];
+    columns.forEach((column, idx) => {
+      column.idx = idx;
+      updateColumnParent(column, idx, 0);
 
-        if (column.colSpan != null) {
-          colSpanColumns.push(column);
-        }
-      });
+      if (column.colSpan != null) {
+        colSpanColumns.push(column);
+      }
+    });
 
-      return {
-        columns,
-        colSpanColumns,
-        lastFrozenColumnIndex,
-        frozenRightColumnCount,
-        headerRowsCount
-      };
-    }, [
-      rawColumns,
-      defaultWidth,
-      defaultMinWidth,
-      defaultMaxWidth,
-      defaultRenderCell,
-      defaultRenderHeaderCell,
-      defaultResizable,
-      defaultSortable,
-      defaultDraggable
-    ]);
+    return {
+      columns,
+      colSpanColumns,
+      lastFrozenColumnIndex,
+      frozenRightColumnCount,
+      headerRowsCount
+    };
+  }, [
+    rawColumns,
+    defaultWidth,
+    defaultMinWidth,
+    defaultMaxWidth,
+    defaultRenderCell,
+    defaultRenderHeaderCell,
+    defaultResizable,
+    defaultSortable,
+    defaultDraggable
+  ]);
 
   const {
     templateColumns,
     layoutCssVars,
+    totalColumnWidth,
     totalFrozenColumnWidth,
     totalRightFrozenColumnWidth,
     columnMetrics
   } = useMemo((): {
     readonly templateColumns: readonly string[];
     readonly layoutCssVars: Readonly<Record<string, string>>;
+    readonly totalColumnWidth: number;
     readonly totalFrozenColumnWidth: number;
     readonly totalRightFrozenColumnWidth: number;
     readonly columnMetrics: ReadonlyMap<CalculatedColumn<R, SR>, ColumnMetric>;
@@ -236,6 +251,7 @@ export function useCalculatedColumns<R, SR>({
     return {
       templateColumns,
       layoutCssVars,
+      totalColumnWidth: left,
       totalFrozenColumnWidth,
       totalRightFrozenColumnWidth,
       columnMetrics
@@ -294,6 +310,7 @@ export function useCalculatedColumns<R, SR>({
   }, [
     columnMetrics,
     columns,
+    frozenRightColumnCount,
     lastFrozenColumnIndex,
     scrollLeft,
     totalFrozenColumnWidth,
@@ -311,7 +328,9 @@ export function useCalculatedColumns<R, SR>({
     layoutCssVars,
     headerRowsCount,
     lastFrozenColumnIndex,
+    totalColumnWidth,
     totalFrozenColumnWidth,
+    totalRightFrozenColumnWidth,
     frozenRightColumnCount
   };
 }

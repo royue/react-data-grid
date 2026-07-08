@@ -33,6 +33,7 @@ import {
   isCellEditableUtil,
   isCtrlKeyHeldDown,
   isDefaultCellInput,
+  max,
   renderMeasuringCells,
   scrollIntoView
 } from './utils';
@@ -75,8 +76,10 @@ import { cellDragHandleClassname, cellDragHandleFrozenClassname } from './style/
 import {
   rootClassname,
   frozenColumnShadowClassname,
-  viewportDraggingClassname,
-  frozenColumnShadowTopClassname
+  frozenColumnShadowTopClassname,
+  frozenRightColumnShadowClassname,
+  frozenRightColumnShadowTopClassname,
+  viewportDraggingClassname
 } from './style/core';
 import SummaryRow from './SummaryRow';
 
@@ -351,7 +354,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     colOverscanEndIdx,
     templateColumns,
     layoutCssVars,
+    totalColumnWidth,
     totalFrozenColumnWidth,
+    totalRightFrozenColumnWidth,
     frozenRightColumnCount
   } = useCalculatedColumns({
     rawColumns,
@@ -381,9 +386,17 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const isSelectable = selectedRows != null && onSelectedRowsChange != null;
   const { leftKey, rightKey } = getLeftRightKey(direction);
   const ariaRowCount = rawAriaRowCount ?? headerRowsCount + rows.length + summaryRowsCount;
+  const maxScrollLeft = max(totalColumnWidth - gridWidth, 0);
+  const firstRightFrozenColumnIndex = columns.length - frozenRightColumnCount;
   const frozenShadowStyles: React.CSSProperties = {
     gridColumnStart: lastFrozenColumnIndex + 2,
-    insetInlineStart: totalFrozenColumnWidth
+    insetInlineStart: totalFrozenColumnWidth,
+    opacity: scrollLeft > 0 ? 1 : 0
+  };
+  const frozenRightShadowStyles: React.CSSProperties = {
+    gridColumnStart: firstRightFrozenColumnIndex + 1,
+    insetInlineEnd: totalRightFrozenColumnWidth,
+    opacity: scrollLeft < maxScrollLeft ? 1 : 0
   };
 
   const {
@@ -1261,6 +1274,47 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
               className={frozenColumnShadowTopClassname}
               style={{
                 ...frozenShadowStyles,
+                gridRowStart: headerAndTopSummaryRowsCount + rows.length + 1,
+                gridRowEnd: headerAndTopSummaryRowsCount + rows.length + 1 + bottomSummaryRowsCount,
+                insetBlockStart:
+                  clientHeight > totalRowHeight
+                    ? gridHeight - summaryRowHeight * bottomSummaryRowsCount
+                    : undefined,
+                insetBlockEnd: clientHeight > totalRowHeight ? undefined : 0
+              }}
+            />
+          )}
+        </>
+      )}
+
+      {frozenRightColumnCount > 0 && (
+        <>
+          <div
+            className={frozenRightColumnShadowTopClassname}
+            style={{
+              ...frozenRightShadowStyles,
+              gridRowStart: 1,
+              gridRowEnd: headerRowsCount + 1 + topSummaryRowsCount,
+              insetBlockStart: 0
+            }}
+          />
+
+          {rows.length > 0 && (
+            <div
+              className={frozenRightColumnShadowClassname}
+              style={{
+                ...frozenRightShadowStyles,
+                gridRowStart: headerAndTopSummaryRowsCount + rowOverscanStartIdx + 1,
+                gridRowEnd: headerAndTopSummaryRowsCount + rowOverscanEndIdx + 2
+              }}
+            />
+          )}
+
+          {bottomSummaryRows != null && bottomSummaryRowsCount > 0 && (
+            <div
+              className={frozenRightColumnShadowTopClassname}
+              style={{
+                ...frozenRightShadowStyles,
                 gridRowStart: headerAndTopSummaryRowsCount + rows.length + 1,
                 gridRowEnd: headerAndTopSummaryRowsCount + rows.length + 1 + bottomSummaryRowsCount,
                 insetBlockStart:

@@ -16,7 +16,6 @@ const root = css`
     --rdg-selection-width: 2px;
     --rdg-selection-color: var(--ant-color-primary, hsl(207, 75%, 66%));
     --rdg-font-size: 14px;
-    --rdg-cell-right-frozen-box-shadow: -2px 0 5px -2px rgba(136, 136, 136, 0.3);
     --rdg-border-width: 1px;
     --rdg-summary-border-width: calc(var(--rdg-border-width) * 2);
     --rdg-color: light-dark(#000, #ddd);
@@ -44,10 +43,6 @@ const root = css`
       color-scheme: light;
     }
 
-    &:dir(rtl) {
-      --rdg-cell-right-frozen-box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
-    }
-
     display: grid;
 
     accent-color: light-dark(
@@ -68,9 +63,6 @@ const root = css`
     color: var(--rdg-color);
     font-size: var(--rdg-font-size);
     font-variant-numeric: tabular-nums;
-
-    container-name: rdg-root;
-    container-type: scroll-state;
 
     /* needed on Firefox to fix scrollbars */
     &::before {
@@ -118,13 +110,26 @@ export const frozenColumnShadowClassname = css`
   pointer-events: none;
   z-index: 1;
 
-  opacity: 1;
   transition: opacity 0.1s;
 
-  /* TODO: reverse 'opacity' and remove 'not' */
-  @container rdg-root not scroll-state(scrollable: inline-start) {
-    opacity: 0;
+  &:dir(rtl) {
+    transform: scaleX(-1);
   }
+`;
+
+// Add shadow before the first right frozen cell
+export const frozenRightColumnShadowClassname = css`
+  position: sticky;
+  width: 10px;
+  background-image: linear-gradient(
+    to left,
+    light-dark(rgb(0 0 0 / 15%), rgb(0 0 0 / 40%)),
+    transparent
+  );
+  pointer-events: none;
+  z-index: 1;
+
+  transition: opacity 0.1s;
 
   &:dir(rtl) {
     transform: scaleX(-1);
@@ -137,3 +142,4 @@ const topShadowClassname = css`
 `;
 
 export const frozenColumnShadowTopClassname = `${frozenColumnShadowClassname} ${topShadowClassname}`;
+export const frozenRightColumnShadowTopClassname = `${frozenRightColumnShadowClassname} ${topShadowClassname}`;

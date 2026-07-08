@@ -14,6 +14,7 @@ import { Route as TreeViewRouteImport } from './routes/TreeView'
 import { Route as ScrollToCellRouteImport } from './routes/ScrollToCell'
 import { Route as RowsReorderingRouteImport } from './routes/RowsReordering'
 import { Route as RowGroupingRouteImport } from './routes/RowGrouping'
+import { Route as RightFrozenColumnsRouteImport } from './routes/RightFrozenColumns'
 import { Route as ResizableGridRouteImport } from './routes/ResizableGrid'
 import { Route as NoRowsRouteImport } from './routes/NoRows'
 import { Route as MillionCellsRouteImport } from './routes/MillionCells'
@@ -54,6 +55,11 @@ const RowsReorderingRoute = RowsReorderingRouteImport.update({
 const RowGroupingRoute = RowGroupingRouteImport.update({
   id: '/RowGrouping',
   path: '/RowGrouping',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RightFrozenColumnsRoute = RightFrozenColumnsRouteImport.update({
+  id: '/RightFrozenColumns',
+  path: '/RightFrozenColumns',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResizableGridRoute = ResizableGridRouteImport.update({
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/MillionCells': typeof MillionCellsRoute
   '/NoRows': typeof NoRowsRoute
   '/ResizableGrid': typeof ResizableGridRoute
+  '/RightFrozenColumns': typeof RightFrozenColumnsRoute
   '/RowGrouping': typeof RowGroupingRoute
   '/RowsReordering': typeof RowsReorderingRoute
   '/ScrollToCell': typeof ScrollToCellRoute
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/MillionCells': typeof MillionCellsRoute
   '/NoRows': typeof NoRowsRoute
   '/ResizableGrid': typeof ResizableGridRoute
+  '/RightFrozenColumns': typeof RightFrozenColumnsRoute
   '/RowGrouping': typeof RowGroupingRoute
   '/RowsReordering': typeof RowsReorderingRoute
   '/ScrollToCell': typeof ScrollToCellRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/MillionCells': typeof MillionCellsRoute
   '/NoRows': typeof NoRowsRoute
   '/ResizableGrid': typeof ResizableGridRoute
+  '/RightFrozenColumns': typeof RightFrozenColumnsRoute
   '/RowGrouping': typeof RowGroupingRoute
   '/RowsReordering': typeof RowsReorderingRoute
   '/ScrollToCell': typeof ScrollToCellRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/MillionCells'
     | '/NoRows'
     | '/ResizableGrid'
+    | '/RightFrozenColumns'
     | '/RowGrouping'
     | '/RowsReordering'
     | '/ScrollToCell'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/MillionCells'
     | '/NoRows'
     | '/ResizableGrid'
+    | '/RightFrozenColumns'
     | '/RowGrouping'
     | '/RowsReordering'
     | '/ScrollToCell'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/MillionCells'
     | '/NoRows'
     | '/ResizableGrid'
+    | '/RightFrozenColumns'
     | '/RowGrouping'
     | '/RowsReordering'
     | '/ScrollToCell'
@@ -296,6 +308,7 @@ export interface RootRouteChildren {
   MillionCellsRoute: typeof MillionCellsRoute
   NoRowsRoute: typeof NoRowsRoute
   ResizableGridRoute: typeof ResizableGridRoute
+  RightFrozenColumnsRoute: typeof RightFrozenColumnsRoute
   RowGroupingRoute: typeof RowGroupingRoute
   RowsReorderingRoute: typeof RowsReorderingRoute
   ScrollToCellRoute: typeof ScrollToCellRoute
@@ -338,6 +351,13 @@ declare module '@tanstack/react-router' {
       path: '/RowGrouping'
       fullPath: '/RowGrouping'
       preLoaderRoute: typeof RowGroupingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/RightFrozenColumns': {
+      id: '/RightFrozenColumns'
+      path: '/RightFrozenColumns'
+      fullPath: '/RightFrozenColumns'
+      preLoaderRoute: typeof RightFrozenColumnsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ResizableGrid': {
@@ -472,6 +492,7 @@ const rootRouteChildren: RootRouteChildren = {
   MillionCellsRoute: MillionCellsRoute,
   NoRowsRoute: NoRowsRoute,
   ResizableGridRoute: ResizableGridRoute,
+  RightFrozenColumnsRoute: RightFrozenColumnsRoute,
   RowGroupingRoute: RowGroupingRoute,
   RowsReorderingRoute: RowsReorderingRoute,
   ScrollToCellRoute: ScrollToCellRoute,

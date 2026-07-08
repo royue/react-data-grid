@@ -306,7 +306,7 @@ copy(
       '@eslint-react/no-component-will-mount': 1,
       '@eslint-react/no-component-will-receive-props': 1,
       '@eslint-react/no-component-will-update': 1,
-      '@eslint-react/no-context-provider': 1,
+      '@eslint-react/no-context-provider': 0,
       '@eslint-react/no-create-ref': 1,
       '@eslint-react/no-direct-mutation-state': 1,
       '@eslint-react/no-duplicate-key': 1,

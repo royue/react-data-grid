@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { css } from 'ecij';
 
 import type { RenderHeaderCellProps } from './types';
@@ -19,11 +20,11 @@ const headerSortName = css`
 
 const headerSortNameClassname = `rdg-header-sort-name ${headerSortName}`;
 
-export default function renderHeaderCell<R, SR>({
+const renderHeaderCell = <R, SR>({
   column,
   sortDirection,
   priority
-}: RenderHeaderCellProps<R, SR>) {
+}: RenderHeaderCellProps<R, SR>): ReactNode => {
   if (!column.sortable) return column.name;
 
   return (
@@ -31,7 +32,9 @@ export default function renderHeaderCell<R, SR>({
       {column.name}
     </SortableHeaderCell>
   );
-}
+};
+
+export default renderHeaderCell;
 
 type SharedHeaderCellProps<R, SR> = Pick<
   RenderHeaderCellProps<R, SR>,
@@ -39,7 +42,7 @@ type SharedHeaderCellProps<R, SR> = Pick<
 >;
 
 interface SortableHeaderCellProps<R, SR> extends SharedHeaderCellProps<R, SR> {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 function SortableHeaderCell<R, SR>({

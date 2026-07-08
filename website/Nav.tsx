@@ -98,6 +98,7 @@ export default function Nav({ direction, onDirectionChange }: Props) {
         <Link to="/MillionCells">A Million Cells</Link>
         <Link to="/NoRows">No Rows</Link>
         <Link to="/ResizableGrid">Resizable Grid</Link>
+        <Link to="/RightFrozenColumns">Right Frozen Columns</Link>
         <Link to="/RowsReordering">Rows Reordering</Link>
         <Link to="/ScrollToCell">Scroll To Cell</Link>
         <Link to="/TreeView">Tree View</Link>

@@ -113,10 +113,7 @@ export function useViewportColumns<R, SR>({
         yield columns[colIdx];
       }
 
-      if (
-        activeColumnIdx > colOverscanEndIdx &&
-        activeColumnIdx < firstRightFrozenColumnIndex
-      ) {
+      if (activeColumnIdx > colOverscanEndIdx && activeColumnIdx < firstRightFrozenColumnIndex) {
         yield columns[activeColumnIdx];
       }
 
