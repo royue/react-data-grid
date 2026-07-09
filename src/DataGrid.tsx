@@ -55,6 +55,7 @@ import type {
   Maybe,
   Position,
   Renderers,
+  RowHeightArgs,
   RowsChangeData,
   SetActivePositionOptions,
   SelectHeaderRowEvent,
@@ -82,6 +83,8 @@ import {
   viewportDraggingClassname
 } from './style/core';
 import SummaryRow from './SummaryRow';
+import { useExpandableRows } from './useExpandableRows';
+import { useRowGrouping } from './useRowGrouping';
 
 export type DefaultColumnOptions<R, SR> = Pick<
   Column<R, SR>,
@@ -99,6 +102,26 @@ export interface DataGridHandle {
   element: HTMLDivElement | null;
   scrollToCell: (position: PartialPosition) => void;
   setActivePosition: (position: Position, options?: SetActivePositionOptions) => void;
+}
+
+export interface RowGroupingOptions<R> {
+  groupBy: readonly string[];
+  rowGrouper: (
+    rows: readonly NoInfer<R>[],
+    columnKey: string
+  ) => Record<string, readonly NoInfer<R>[]>;
+  expandedGroupIds: ReadonlySet<unknown>;
+  onExpandedGroupIdsChange: (expandedGroupIds: Set<unknown>) => void;
+  groupIdGetter?: Maybe<(groupKey: string, parentId?: string) => string>;
+  rowHeight?: Maybe<number | ((args: RowHeightArgs<NoInfer<R>>) => number)>;
+}
+
+export interface ExpandableOptions<R, K extends Key> {
+  expandedRowKeys: ReadonlySet<K>;
+  onExpandedRowKeysChange: (expandedRowKeys: Set<NoInfer<K>>) => void;
+  rowExpandable?: Maybe<(row: NoInfer<R>) => boolean>;
+  renderExpandedRow: (props: { row: NoInfer<R>; rowIdx: number }) => React.ReactNode;
+  expandedRowHeight?: Maybe<number | ((row: NoInfer<R>) => number)>;
 }
 
 type SharedDivProps = Pick<
@@ -165,6 +188,10 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   isRowSelectionDisabled?: Maybe<(row: NoInfer<R>) => boolean>;
   /** Callback triggered when the selection changes */
   onSelectedRowsChange?: Maybe<(selectedRows: Set<NoInfer<K>>) => void>;
+  /** Row grouping configuration */
+  rowGrouping?: Maybe<RowGroupingOptions<NoInfer<R>>>;
+  /** Master/detail row expansion configuration */
+  expandable?: Maybe<ExpandableOptions<NoInfer<R>, NoInfer<K>>>;
   /** An array of sorted columns */
   sortColumns?: Maybe<readonly SortColumn[]>;
   /** Callback triggered when sorting changes */
@@ -235,6 +262,46 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
  * <DataGrid columns={columns} rows={rows} />
  */
 export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridProps<R, SR, K>) {
+  const { rowGrouping } = props;
+  if (rowGrouping != null) {
+    return <DataGridWithRowGrouping {...props} rowGrouping={rowGrouping} />;
+  }
+  const { expandable } = props;
+  if (expandable != null) {
+    return <DataGridWithExpandableRows {...props} expandable={expandable} />;
+  }
+
+  return <DataGridImpl {...props} />;
+}
+
+interface DataGridWithRowGroupingProps<R, SR, K extends Key> extends DataGridProps<R, SR, K> {
+  rowGrouping: RowGroupingOptions<R>;
+}
+
+function DataGridWithRowGrouping<R, SR = unknown, K extends Key = Key>(
+  props: DataGridWithRowGroupingProps<R, SR, K>
+) {
+  const dataGridProps = useRowGrouping(props);
+  return <DataGridImpl {...dataGridProps} />;
+}
+
+interface DataGridWithExpandableRowsProps<R, SR, K extends Key> extends DataGridProps<R, SR, K> {
+  expandable: ExpandableOptions<R, K>;
+}
+
+function DataGridWithExpandableRows<R, SR = unknown, K extends Key = Key>(
+  props: DataGridWithExpandableRowsProps<R, SR, K>
+) {
+  const dataGridProps = useExpandableRows(props);
+  return <DataGridImpl {...dataGridProps} />;
+}
+
+type DataGridImplProps<R, SR, K extends Key> = Omit<
+  DataGridProps<R, SR, K>,
+  'expandable' | 'rowGrouping'
+>;
+
+function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplProps<R, SR, K>) {
   const {
     ref,
     wrapperRef,
@@ -438,6 +505,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
     if (rowKeyGetter != null && selectedRows != null && selectedRows.size > 0) {
       for (const row of rows) {
+        if (isRowSelectionDisabled?.(row) === true) continue;
+
         if (selectedRows.has(rowKeyGetter(row))) {
           hasSelectedRow = true;
         } else {
@@ -452,7 +521,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       isRowSelected: hasSelectedRow && !hasUnselectedRow,
       isIndeterminate: hasSelectedRow && hasUnselectedRow
     };
-  }, [rows, selectedRows, rowKeyGetter]);
+  }, [isRowSelectionDisabled, rows, selectedRows, rowKeyGetter]);
 
   const {
     rowOverscanStartIdx,
@@ -1138,6 +1207,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         gridTemplateColumns,
         gridTemplateRows: templateRows,
         '--rdg-header-row-height': `${headerRowHeight}px`,
+        '--rdg-viewport-width': `${gridWidth}px`,
         ...layoutCssVars
       }}
       dir={direction}

@@ -4,7 +4,9 @@ export {
   DataGrid,
   type DataGridHandle,
   type DataGridProps,
-  type DefaultColumnOptions
+  type ExpandableOptions,
+  type DefaultColumnOptions,
+  type RowGroupingOptions
 } from './DataGrid';
 export { TreeDataGrid, type TreeDataGridProps } from './TreeDataGrid';
 export { DataGridDefaultRenderersContext } from './DataGridDefaultRenderersContext';

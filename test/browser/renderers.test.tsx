@@ -264,6 +264,27 @@ test('renderRow defined using context', async () => {
   await expect.element(row).not.toHaveClass('local');
 });
 
+test('renderRow defined using context with expandable rows', async () => {
+  await setupContext({
+    columns,
+    rows: [{ id: 1, col1: 'value 1', col2: 'value 2' }],
+    rowKeyGetter(row) {
+      return row.id;
+    },
+    expandable: {
+      expandedRowKeys: new Set<number>(),
+      onExpandedRowKeysChange() {},
+      renderExpandedRow() {
+        return null;
+      }
+    }
+  });
+
+  const row = getRowWithCell(page.getCell({ name: 'value 1' }));
+  await expect.element(row).toHaveClass('global');
+  await expect.element(row).not.toHaveClass('local');
+});
+
 test('renderRow defined using both contexts and renderers', async () => {
   await setupContext({
     columns,

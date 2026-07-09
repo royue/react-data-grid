@@ -39,13 +39,13 @@ const headerRow = css`
     font-weight: bold;
 
     & > .${cell} {
-      /* Should have a higher value than 1 to show up above regular cells and the focus sink */
-      z-index: 2;
+      /* Should have a higher value than expanded rows, regular cells and the focus sink */
+      z-index: 3;
       position: sticky;
     }
 
     & > .${cellFrozen} {
-      z-index: 3;
+      z-index: 4;
     }
   }
 `;

@@ -138,7 +138,7 @@ export const frozenRightColumnShadowClassname = css`
 
 const topShadowClassname = css`
   /* render above header and summary rows */
-  z-index: 2;
+  z-index: 5;
 `;
 
 export const frozenColumnShadowTopClassname = `${frozenColumnShadowClassname} ${topShadowClassname}`;

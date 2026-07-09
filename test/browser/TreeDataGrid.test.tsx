@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { page, userEvent } from 'vitest/browser';
 
 import type { Column } from '../../src';
-import { renderTextEditor, SelectColumn, TreeDataGrid } from '../../src';
+import { DataGrid, renderTextEditor, SelectColumn, TreeDataGrid } from '../../src';
 import { rowActiveClassname } from '../../src/style/row';
 import { getCellsAtRowIndex, getRowWithCell, testCount, testRowCount } from './utils';
 
@@ -102,22 +102,24 @@ function TestGrid({
   );
 
   return (
-    <TreeDataGrid
+    <DataGrid
       columns={columns}
       rows={rows}
       topSummaryRows={topSummaryRows}
       bottomSummaryRows={bottomSummaryRows}
       rowKeyGetter={rowKeyGetter}
-      groupBy={groupBy}
-      rowGrouper={rowGrouper}
       selectedRows={selectedRows}
       onSelectedRowsChange={setSelectedRows}
-      expandedGroupIds={expandedGroupIds}
-      onExpandedGroupIdsChange={setExpandedGroupIds}
+      rowGrouping={{
+        groupBy,
+        rowGrouper,
+        expandedGroupIds,
+        onExpandedGroupIdsChange: setExpandedGroupIds,
+        groupIdGetter
+      }}
       onRowsChange={setRows}
       onCellCopy={onCellCopySpy}
       onCellPaste={onCellPasteSpy}
-      groupIdGetter={groupIdGetter}
     />
   );
 }
@@ -305,6 +307,44 @@ test('should select rows in a group', async () => {
 
   await userEvent.click(headerCheckbox);
   await testCount(selectedRows, 0);
+});
+
+test('should not select disabled rows when selecting a group', async () => {
+  function DisabledSelectionGrid() {
+    const [selectedRows, setSelectedRows] = useState((): ReadonlySet<number> => new Set());
+
+    return (
+      <DataGrid<Row, SummaryRow, number>
+        columns={columns}
+        rows={initialRows}
+        rowKeyGetter={rowKeyGetter}
+        selectedRows={selectedRows}
+        onSelectedRowsChange={setSelectedRows}
+        isRowSelectionDisabled={(row) => row.id === 2}
+        rowGrouping={{
+          groupBy: ['country'],
+          rowGrouper,
+          expandedGroupIds: new Set(['USA']),
+          onExpandedGroupIdsChange() {}
+        }}
+      />
+    );
+  }
+
+  await page.render(<DisabledSelectionGrid />);
+
+  const groupCell = page.getCell({ name: 'USA' });
+  await userEvent.click(getRowWithCell(groupCell).getByRole('checkbox', { name: 'Select Group' }));
+
+  const selectedRows = page.getRow({ selected: true });
+  await testCount(selectedRows, 2);
+  await expect.element(getRowWithCell(groupCell)).toHaveAttribute('aria-selected', 'true');
+  await expect
+    .element(page.getRow().filter({ has: page.getByRole('button', { name: 'value: 1' }) }))
+    .toHaveAttribute('aria-selected', 'true');
+  await expect
+    .element(page.getRow().filter({ has: page.getByRole('button', { name: 'value: 2' }) }))
+    .toHaveAttribute('aria-selected', 'false');
 });
 
 test('cell navigation in a treegrid', async () => {

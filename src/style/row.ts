@@ -54,3 +54,34 @@ export const rowActiveClassname = 'rdg-row-active';
 export const topSummaryRowClassname = 'rdg-top-summary-row';
 
 export const bottomSummaryRowClassname = 'rdg-bottom-summary-row';
+
+const expandedRow = css`
+  @layer rdg.Row {
+    display: block;
+    grid-column: 1 / -1;
+    position: sticky;
+    inset-inline-start: 0;
+    inline-size: var(--rdg-viewport-width);
+    z-index: 2;
+    background-color: var(--rdg-background-color);
+    border-block-end: var(--rdg-border-width) solid var(--rdg-border-color);
+    overflow: auto;
+    overflow-anchor: none;
+  }
+`;
+
+export const expandedRowClassname = `rdg-expanded-row ${expandedRow}`;
+
+const expandedRowCell = css`
+  @layer rdg.Row {
+    block-size: 100%;
+    outline: none;
+
+    &[aria-selected='true'] {
+      outline: var(--rdg-selection-width) solid var(--rdg-selection-color);
+      outline-offset: calc(var(--rdg-selection-width) * -1);
+    }
+  }
+`;
+
+export const expandedRowCellClassname = `rdg-expanded-row-cell ${expandedRowCell}`;

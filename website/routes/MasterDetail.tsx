@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { createFileRoute } from '@tanstack/react-router';
 import { css } from 'ecij';
 
-import { DataGrid, type Column, type Direction, type RowsChangeData } from '../../src';
+import { DataGrid, type Column, type Direction } from '../../src';
 import { CellExpanderFormatter } from '../components';
 import { useDirection } from '../directionContext';
 
@@ -11,18 +11,30 @@ export const Route = createFileRoute('/MasterDetail')({
   component: MasterDetail
 });
 
-type DepartmentRow =
-  | {
-      type: 'MASTER';
-      id: number;
-      department: string;
-      expanded: boolean;
-    }
-  | {
-      type: 'DETAIL';
-      id: number;
-      parentId: number;
-    };
+interface DepartmentRow {
+  id: number;
+  department: string;
+  owner: string;
+  region: string;
+  status: string;
+  budget: string;
+  metric01: string;
+  metric02: string;
+  metric03: string;
+  metric04: string;
+  metric05: string;
+  metric06: string;
+  metric07: string;
+  metric08: string;
+  metric09: string;
+  metric10: string;
+  metric11: string;
+  metric12: string;
+  metric13: string;
+  metric14: string;
+  metric15: string;
+  action: string;
+}
 
 interface ProductRow {
   id: number;
@@ -35,10 +47,28 @@ function createDepartments(): readonly DepartmentRow[] {
   const departments: DepartmentRow[] = [];
   for (let i = 1; i < 30; i++) {
     departments.push({
-      type: 'MASTER',
       id: i,
       department: faker.commerce.department(),
-      expanded: false
+      owner: faker.person.fullName(),
+      region: faker.location.country(),
+      status: faker.helpers.arrayElement(['Planning', 'Active', 'Review']),
+      budget: faker.finance.amount({ min: 50_000, max: 500_000, dec: 0, symbol: '$' }),
+      metric01: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric02: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric03: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric04: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric05: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric06: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric07: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric08: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric09: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric10: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric11: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric12: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric13: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric14: faker.number.int({ min: 10, max: 99 }).toString(),
+      metric15: faker.number.int({ min: 10, max: 99 }).toString(),
+      action: 'Review'
     });
   }
   return departments;
@@ -70,63 +100,60 @@ const productColumns: readonly Column<ProductRow>[] = [
 
 function MasterDetail() {
   const direction = useDirection();
+  const [expandedRowKeys, setExpandedRowKeys] = useState((): ReadonlySet<number> => new Set());
 
   const columns = useMemo((): readonly Column<DepartmentRow>[] => {
     return [
       {
         key: 'expanded',
         name: '',
+        frozen: true,
         minWidth: 30,
         width: 30,
-        colSpan(args) {
-          return args.type === 'ROW' && args.row.type === 'DETAIL' ? 3 : undefined;
-        },
-        cellClass(row) {
-          return row.type === 'DETAIL'
-            ? css`
-                /* allows shrinking the inner grid */
-                contain: inline-size;
-                padding: 24px;
-              `
-            : undefined;
-        },
         renderCell({ row, tabIndex, onRowChange }) {
-          if (row.type === 'DETAIL') {
-            return <ProductGrid parentId={row.parentId} direction={direction} />;
-          }
-
           return (
             <CellExpanderFormatter
-              expanded={row.expanded}
+              expanded={expandedRowKeys.has(row.id)}
               tabIndex={tabIndex}
               onCellExpand={() => {
-                onRowChange({ ...row, expanded: !row.expanded });
+                onRowChange(row);
+                const newExpandedRowKeys = new Set(expandedRowKeys);
+                if (newExpandedRowKeys.has(row.id)) {
+                  newExpandedRowKeys.delete(row.id);
+                } else {
+                  newExpandedRowKeys.add(row.id);
+                }
+                setExpandedRowKeys(newExpandedRowKeys);
               }}
             />
           );
         }
       },
-      { key: 'id', name: 'ID', width: 35 },
-      { key: 'department', name: 'Department' }
+      { key: 'id', name: 'ID', frozen: true, width: 80 },
+      { key: 'department', name: 'Department', width: 220 },
+      { key: 'owner', name: 'Owner', width: 240 },
+      { key: 'region', name: 'Region', width: 220 },
+      { key: 'status', name: 'Status', width: 160 },
+      { key: 'budget', name: 'Budget', width: 160 },
+      { key: 'metric01', name: 'Metric 01', width: 140 },
+      { key: 'metric02', name: 'Metric 02', width: 140 },
+      { key: 'metric03', name: 'Metric 03', width: 140 },
+      { key: 'metric04', name: 'Metric 04', width: 140 },
+      { key: 'metric05', name: 'Metric 05', width: 140 },
+      { key: 'metric06', name: 'Metric 06', width: 140 },
+      { key: 'metric07', name: 'Metric 07', width: 140 },
+      { key: 'metric08', name: 'Metric 08', width: 140 },
+      { key: 'metric09', name: 'Metric 09', width: 140 },
+      { key: 'metric10', name: 'Metric 10', width: 140 },
+      { key: 'metric11', name: 'Metric 11', width: 140 },
+      { key: 'metric12', name: 'Metric 12', width: 140 },
+      { key: 'metric13', name: 'Metric 13', width: 140 },
+      { key: 'metric14', name: 'Metric 14', width: 140 },
+      { key: 'metric15', name: 'Metric 15', width: 140 },
+      { key: 'action', name: 'Action', frozenRight: true, width: 120 }
     ];
-  }, [direction]);
+  }, [expandedRowKeys]);
   const [rows, setRows] = useState(createDepartments);
-
-  function onRowsChange(rows: DepartmentRow[], { indexes }: RowsChangeData<DepartmentRow>) {
-    const row = rows[indexes[0]];
-    if (row.type === 'MASTER') {
-      if (row.expanded) {
-        rows.splice(indexes[0] + 1, 0, {
-          type: 'DETAIL',
-          id: row.id + 100,
-          parentId: row.id
-        });
-      } else {
-        rows.splice(indexes[0] + 1, 1);
-      }
-      setRows(rows);
-    }
-  }
 
   return (
     <DataGrid
@@ -134,11 +161,27 @@ function MasterDetail() {
       rowKeyGetter={rowKeyGetter}
       columns={columns}
       rows={rows}
-      onRowsChange={onRowsChange}
+      onRowsChange={setRows}
       headerRowHeight={45}
-      rowHeight={(row) => (row.type === 'DETAIL' ? 300 : 45)}
+      rowHeight={45}
+      expandable={{
+        expandedRowKeys,
+        onExpandedRowKeysChange: setExpandedRowKeys,
+        renderExpandedRow({ row }) {
+          return (
+            <div
+              className={css`
+                block-size: 100%;
+                padding: 24px;
+              `}
+            >
+              <ProductGrid parentId={row.id} direction={direction} />
+            </div>
+          );
+        },
+        expandedRowHeight: 300
+      }}
       className="fill-grid"
-      enableVirtualization={false}
       direction={direction}
       onCellKeyDown={(_, event) => {
         if (event.isDefaultPrevented()) {

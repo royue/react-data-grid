@@ -429,6 +429,58 @@ function MyGrid() {
 }
 ```
 
+###### `expandable?: Maybe<ExpandableOptions<R, K>>`
+
+Master/detail row expansion configuration. `rowKeyGetter` is required because expanded rows are tracked by row key.
+
+Expanded detail rows are rendered at the grid viewport width. When the grid scrolls horizontally, the detail row stays aligned with the visible table width instead of scrolling with the columns. This also prevents frozen columns from covering the expanded content.
+
+```tsx
+import { useState } from 'react';
+import { DataGrid, type Column } from 'react-data-grid';
+
+interface Row {
+  id: number;
+  name: string;
+}
+
+const columns: readonly Column<Row>[] = [
+  {
+    key: 'expanded',
+    name: '',
+    renderCell({ row }) {
+      // Render your own expand/collapse control and update expandedRowKeys.
+      return null;
+    }
+  },
+  { key: 'name', name: 'Name' }
+];
+
+function rowKeyGetter(row: Row) {
+  return row.id;
+}
+
+function MyGrid() {
+  const [expandedRowKeys, setExpandedRowKeys] = useState((): ReadonlySet<number> => new Set());
+
+  return (
+    <DataGrid
+      columns={columns}
+      rows={rows}
+      rowKeyGetter={rowKeyGetter}
+      expandable={{
+        expandedRowKeys,
+        onExpandedRowKeysChange: setExpandedRowKeys,
+        renderExpandedRow({ row }) {
+          return <Details row={row} />;
+        },
+        expandedRowHeight: 250
+      }}
+    />
+  );
+}
+```
+
 ###### `sortColumns?: Maybe<readonly SortColumn[]>`
 
 An array of sorted columns.
@@ -773,9 +825,11 @@ test('grid', async () => {
 
 Optional attribute to help with Cypress (or similar) selectors.
 
-#### `<TreeDataGrid />`
+#### Row Grouping
 
-`TreeDataGrid` is a component built on top of `DataGrid` to add hierarchical row grouping. This implements the [Treegrid pattern](https://www.w3.org/WAI/ARIA/apg/patterns/treegrid/).
+`DataGrid` supports hierarchical row grouping via the `rowGrouping` prop. This implements the [Treegrid pattern](https://www.w3.org/WAI/ARIA/apg/patterns/treegrid/).
+
+`TreeDataGrid` is still exported as a compatibility wrapper, but `DataGrid` with `rowGrouping` is the recommended API.
 
 **How it works:**
 
@@ -790,14 +844,13 @@ Optional attribute to help with Cypress (or similar) selectors.
 - <kbd>→</kbd> (Right Arrow): Expand a collapsed group row when focused
 - <kbd>←</kbd> (Left Arrow): Collapse an expanded group row when focused, or navigate to parent group
 
-**Unsupported Props:**
+**Unsupported Props with rowGrouping:**
 
-The following `DataGrid` props are not supported in `TreeDataGrid`:
+The following `DataGrid` props are managed by row grouping:
 
 - `onFill` - Drag-fill is disabled for tree grids
-- `isRowSelectionDisabled` - Row selection disabling is not available
-- `role` - `TreeDataGrid` manages the ARIA role
-- `aria-rowcount` - `TreeDataGrid` manages the ARIA row count
+- `role` - `DataGrid` uses `treegrid`
+- `aria-rowcount` - `DataGrid` manages the ARIA row count
 
 **Caveats:**
 
@@ -808,14 +861,20 @@ The following `DataGrid` props are not supported in `TreeDataGrid`:
 
 ##### TreeDataGridProps
 
+Deprecated. Use `rowGrouping` on `DataGrid` instead.
+
 All [`DataGridProps`](#datagridprops) are supported except those listed above. The `columns` prop only supports `Column[]` (no column groups). When `rowHeight` is a function, it receives [`RowHeightArgs`](#rowheightargstrow) instead of just the row. Additional props are listed below:
+
+##### `rowGrouping?: Maybe<RowGroupingOptions<R>>`
+
+Enables row grouping on `DataGrid`.
 
 ###### `groupBy: readonly string[]`
 
 **Required.** An array of column keys to group by. The order determines the grouping hierarchy (first key is the top level, second key is nested under the first, etc.).
 
 ```tsx
-import { TreeDataGrid, type Column } from 'react-data-grid';
+import { DataGrid, type Column } from 'react-data-grid';
 
 interface Row {
   id: number;
@@ -832,10 +891,15 @@ const columns: readonly Column<Row>[] = [
 
 function MyGrid() {
   return (
-    <TreeDataGrid
+    <DataGrid
       columns={columns}
       rows={rows}
-      groupBy={['country', 'city']}
+      rowGrouping={{
+        groupBy: ['country', 'city'],
+        rowGrouper,
+        expandedGroupIds,
+        onExpandedGroupIdsChange
+      }}
       // ... other props
     />
   );
@@ -858,15 +922,19 @@ function rowGrouper(rows: readonly Row[], columnKey: string): Record<string, rea
 
 ```tsx
 import { useState } from 'react';
-import { TreeDataGrid } from 'react-data-grid';
+import { DataGrid } from 'react-data-grid';
 
 function MyGrid() {
   const [expandedGroupIds, setExpandedGroupIds] = useState((): ReadonlySet<unknown> => new Set());
 
   return (
-    <TreeDataGrid
-      expandedGroupIds={expandedGroupIds}
-      onExpandedGroupIdsChange={setExpandedGroupIds}
+    <DataGrid
+      rowGrouping={{
+        groupBy,
+        rowGrouper,
+        expandedGroupIds,
+        onExpandedGroupIdsChange: setExpandedGroupIds
+      }}
       // ... other props
     />
   );
@@ -883,7 +951,7 @@ Function to generate unique IDs for group rows. If not provided, a default imple
 
 ###### `rowHeight?: Maybe<number | ((args: RowHeightArgs<R>) => number)>`
 
-**Note:** Unlike `DataGrid`, the `rowHeight` function receives [`RowHeightArgs<R>`](#rowheightargstrow) which includes a `type` property to distinguish between regular rows and group rows:
+When specified in `rowGrouping`, the `rowHeight` function receives [`RowHeightArgs<R>`](#rowheightargstrow) which includes a `type` property to distinguish between regular rows and group rows:
 
 ```tsx
 function getRowHeight(args: RowHeightArgs<Row>): number {
@@ -893,7 +961,7 @@ function getRowHeight(args: RowHeightArgs<Row>): number {
   return 35; // Height for regular rows
 }
 
-<TreeDataGrid rowHeight={getRowHeight} ... />
+<DataGrid rowGrouping={{ ...rowGrouping, rowHeight: getRowHeight }} ... />
 ```
 
 #### `<Row />`
@@ -1497,7 +1565,7 @@ type CalculatedColumnOrColumnGroup<R, SR> = CalculatedColumnParent<R, SR> | Calc
 
 #### `RowHeightArgs<TRow>`
 
-Arguments passed to `TreeDataGrid`'s `rowHeight` prop when it is a function.
+Arguments passed to `rowGrouping.rowHeight` when it is a function.
 
 ```tsx
 type RowHeightArgs<TRow> = { type: 'ROW'; row: TRow } | { type: 'GROUP'; row: GroupRow<TRow> };
@@ -1513,7 +1581,7 @@ function getRowHeight(args: RowHeightArgs<Row>): number {
   return args.row.isLarge ? 60 : 35;
 }
 
-<TreeDataGrid rowHeight={getRowHeight} ... />
+<DataGrid rowGrouping={{ ...rowGrouping, rowHeight: getRowHeight }} ... />
 ```
 
 #### `RenderCellProps<TRow, TSummaryRow>`
@@ -1604,7 +1672,7 @@ interface RenderSummaryCellProps<TSummaryRow, TRow = unknown> {
 
 #### `RenderGroupCellProps<TRow, TSummaryRow>`
 
-Props passed to group cell renderers when using `TreeDataGrid`.
+Props passed to group cell renderers when using row grouping.
 
 ```tsx
 interface RenderGroupCellProps<TRow, TSummaryRow = unknown> {
@@ -1926,7 +1994,7 @@ Used with the `onFill` prop to handle cell value dragging.
 
 #### `GroupRow<TRow>` (internal)
 
-Represents a grouped row in `TreeDataGrid`. This helper type is not exported; the shape is shown for reference.
+Represents a grouped row. This helper type is not exported; the shape is shown for reference.
 
 ```tsx
 interface GroupRow<TRow> {

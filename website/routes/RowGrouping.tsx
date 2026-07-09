@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { createFileRoute } from '@tanstack/react-router';
 import { css } from 'ecij';
 
-import { SelectColumn, TreeDataGrid, type Column } from '../../src';
+import { DataGrid, SelectColumn, type Column } from '../../src';
 import { useDirection } from '../directionContext';
 
 export const Route = createFileRoute('/RowGrouping')({
@@ -187,17 +187,19 @@ function RowGrouping() {
         ))}
       </div>
 
-      <TreeDataGrid
+      <DataGrid
         aria-label="Row Grouping Example"
         columns={columns}
         rows={rows}
         rowKeyGetter={rowKeyGetter}
         selectedRows={selectedRows}
         onSelectedRowsChange={setSelectedRows}
-        groupBy={selectedOptions}
-        rowGrouper={rowGrouper}
-        expandedGroupIds={expandedGroupIds}
-        onExpandedGroupIdsChange={setExpandedGroupIds}
+        rowGrouping={{
+          groupBy: selectedOptions,
+          rowGrouper,
+          expandedGroupIds,
+          onExpandedGroupIdsChange: setExpandedGroupIds
+        }}
         defaultColumnOptions={{ resizable: true }}
         direction={direction}
       />
