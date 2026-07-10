@@ -28,12 +28,15 @@ export function getHeaderCellStyle<R, SR>(
 
 export function getCellStyle<R, SR>(
   column: CalculatedColumn<R, SR>,
-  colSpan = 1
+  colSpan = 1,
+  rowSpanHeight?: number
 ): React.CSSProperties {
   const index = column.idx + 1;
   return {
     gridColumnStart: index,
     gridColumnEnd: index + colSpan,
+    blockSize: rowSpanHeight,
+    zIndex: rowSpanHeight === undefined ? undefined : 1,
     insetInlineStart: column.frozen ? `var(--rdg-frozen-left-${column.idx})` : undefined,
     insetInlineEnd: column.frozenRight ? `var(--rdg-frozen-right-${column.idx})` : undefined
   };

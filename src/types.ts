@@ -46,6 +46,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /** Enables cell editing. If set and no editor property specified, then a textinput will be used as the cell editor */
   readonly editable?: Maybe<boolean | ((row: TRow) => boolean)>;
   readonly colSpan?: Maybe<(args: ColSpanArgs<TRow, TSummaryRow>) => Maybe<number>>;
+  readonly rowSpan?: Maybe<(args: RowSpanArgs<TRow>) => Maybe<number>>;
   /** Determines whether column is frozen */
   readonly frozen?: Maybe<boolean>;
   /** Determines whether column is right frozen or not */
@@ -181,6 +182,8 @@ export interface CellRendererProps<TRow, TSummaryRow> extends BaseCellRendererPr
   column: CalculatedColumn<TRow, TSummaryRow>;
   row: TRow;
   colSpan: number | undefined;
+  rowSpan: number | undefined;
+  rowSpanHeight: number | undefined;
   isDraggedOver: boolean;
   isCellActive: boolean;
   onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
@@ -255,7 +258,9 @@ export type IterateOverViewportColumns<TRow, TSummaryRow> = (
 export type ViewportColumnWithColSpan<TRow, TSummaryRow> = [
   column: CalculatedColumn<TRow, TSummaryRow>,
   isCellActive: boolean,
-  colSpan: number | undefined
+  colSpan: number | undefined,
+  rowSpan: number | undefined,
+  rowSpanHeight: number | undefined
 ];
 
 export type IterateOverViewportColumnsForRow<TRow, TSummaryRow> = (
@@ -340,6 +345,11 @@ export type ColSpanArgs<TRow, TSummaryRow> =
   | { readonly type: 'HEADER' }
   | { readonly type: 'ROW'; readonly row: TRow }
   | { readonly type: 'SUMMARY'; readonly row: TSummaryRow };
+
+export interface RowSpanArgs<TRow> {
+  readonly type: 'ROW';
+  readonly row: TRow;
+}
 
 export type RowHeightArgs<TRow> =
   | { type: 'ROW'; row: TRow }

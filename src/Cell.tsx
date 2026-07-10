@@ -16,6 +16,8 @@ const cellDraggedOverClassname = `rdg-cell-dragged-over ${cellDraggedOver}`;
 function Cell<R, SR>({
   column,
   colSpan,
+  rowSpan,
+  rowSpanHeight,
   isCellActive,
   isDraggedOver,
   row,
@@ -97,12 +99,13 @@ function Cell<R, SR>({
       role="gridcell"
       aria-colindex={column.idx + 1} // aria-colindex is 1-based
       aria-colspan={colSpan}
+      aria-rowspan={rowSpan}
       aria-selected={isCellActive}
       aria-readonly={!isEditable || undefined}
       tabIndex={tabIndex}
       className={className}
       style={{
-        ...getCellStyle(column, colSpan),
+        ...getCellStyle(column, colSpan, rowSpanHeight),
         ...style
       }}
       onClick={handleClick}

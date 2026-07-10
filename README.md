@@ -1424,7 +1424,7 @@ Control whether cells can be edited with `renderEditCell`.
 
 ##### `colSpan?: Maybe<(args: ColSpanArgs<TRow, TSummaryRow>) => Maybe<number>>`
 
-Function to determine how many columns this cell should span. Returns the number of columns to span, or `undefined` for no spanning. See the [`ColSpanArgs`](#colspanargstrow-tsummaryrow) type in the Types section below.
+Function to determine how many columns this cell should span. Returns the number of columns to span, or `undefined` for no spanning. Spans cannot cross frozen, regular, and right-frozen column boundaries. See the [`ColSpanArgs`](#colspanargstrow-tsummaryrow) type in the Types section below.
 
 **Example:**
 
@@ -1438,6 +1438,29 @@ const columns: readonly Column<Row>[] = [
     colSpan(args) {
       if (args.type === 'ROW' && args.row.isFullWidth) {
         return 5; // Span 5 columns for full-width rows
+      }
+      return undefined;
+    }
+  }
+];
+```
+
+##### `rowSpan?: Maybe<(args: RowSpanArgs<TRow>) => Maybe<number>>`
+
+Function to determine how many rows this cell should span. Returns the number of rows to span, or `undefined` for no spanning. When combined with `colSpan`, the horizontal span cannot cross frozen, regular, and right-frozen column boundaries. See the [`RowSpanArgs`](#rowspanargstrow) type in the Types section below.
+
+**Example:**
+
+```tsx
+import type { Column } from 'react-data-grid';
+
+const columns: readonly Column<Row>[] = [
+  {
+    key: 'category',
+    name: 'Category',
+    rowSpan(args) {
+      if (args.row.isCategoryStart) {
+        return args.row.categorySize;
       }
       return undefined;
     }
@@ -1712,7 +1735,7 @@ interface RenderRowProps<TRow, TSummaryRow = unknown> {
 
 Props passed to the cell renderer when using `renderers.renderCell`.
 
-Shares a base type with row render props (DOM props and cell event handlers) but only includes cell-specific fields like `column`, `row`, `rowIdx`, `colSpan`, and position state.
+Shares a base type with row render props (DOM props and cell event handlers) but only includes cell-specific fields like `column`, `row`, `rowIdx`, `colSpan`, `rowSpan`, `rowSpanHeight`, and position state.
 
 #### `Renderers<TRow, TSummaryRow>`
 
@@ -1918,6 +1941,36 @@ const columns: readonly Column<Row>[] = [
     colSpan(args) {
       if (args.type === 'ROW' && args.row.isFullWidth) {
         return 3; // Span 3 columns
+      }
+      return undefined;
+    }
+  }
+];
+```
+
+#### `RowSpanArgs<TRow>`
+
+Arguments passed to the `rowSpan` function.
+
+```tsx
+interface RowSpanArgs<TRow> {
+  readonly type: 'ROW';
+  readonly row: TRow;
+}
+```
+
+**Example:**
+
+```tsx
+import type { Column } from 'react-data-grid';
+
+const columns: readonly Column<Row>[] = [
+  {
+    key: 'category',
+    name: 'Category',
+    rowSpan(args) {
+      if (args.row.isCategoryStart) {
+        return args.row.categorySize; // Span multiple rows
       }
       return undefined;
     }

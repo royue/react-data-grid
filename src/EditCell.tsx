@@ -35,7 +35,10 @@ const cellEditing = css`
   }
 `;
 
-type SharedCellRendererProps<R, SR> = Pick<CellRendererProps<R, SR>, 'colSpan'>;
+type SharedCellRendererProps<R, SR> = Pick<
+  CellRendererProps<R, SR>,
+  'colSpan' | 'rowSpan' | 'rowSpanHeight'
+>;
 
 interface EditCellProps<R, SR>
   extends
@@ -51,6 +54,8 @@ interface EditCellProps<R, SR>
 export default function EditCell<R, SR>({
   column,
   colSpan,
+  rowSpan,
+  rowSpanHeight,
   row,
   rowIdx,
   onRowChange,
@@ -176,9 +181,10 @@ export default function EditCell<R, SR>({
       role="gridcell"
       aria-colindex={column.idx + 1} // aria-colindex is 1-based
       aria-colspan={colSpan}
+      aria-rowspan={rowSpan}
       aria-selected
       className={className}
-      style={getCellStyle(column, colSpan)}
+      style={getCellStyle(column, colSpan, rowSpanHeight)}
       onKeyDown={handleKeyDown}
       onMouseDownCapture={cancelTask}
     >

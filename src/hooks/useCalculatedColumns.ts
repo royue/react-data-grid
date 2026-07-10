@@ -65,12 +65,14 @@ export function useCalculatedColumns<R, SR>({
   const {
     columns,
     colSpanColumns,
+    rowSpanColumns,
     lastFrozenColumnIndex,
     frozenRightColumnCount,
     headerRowsCount
   } = useMemo((): {
     readonly columns: readonly CalculatedColumn<R, SR>[];
     readonly colSpanColumns: readonly CalculatedColumn<R, SR>[];
+    readonly rowSpanColumns: readonly CalculatedColumn<R, SR>[];
     readonly lastFrozenColumnIndex: number;
     readonly frozenRightColumnCount: number;
     readonly headerRowsCount: number;
@@ -167,6 +169,7 @@ export function useCalculatedColumns<R, SR>({
     });
 
     const colSpanColumns: CalculatedColumn<R, SR>[] = [];
+    const rowSpanColumns: CalculatedColumn<R, SR>[] = [];
     columns.forEach((column, idx) => {
       column.idx = idx;
       updateColumnParent(column, idx, 0);
@@ -174,11 +177,15 @@ export function useCalculatedColumns<R, SR>({
       if (column.colSpan != null) {
         colSpanColumns.push(column);
       }
+      if (column.rowSpan != null) {
+        rowSpanColumns.push(column);
+      }
     });
 
     return {
       columns,
       colSpanColumns,
+      rowSpanColumns,
       lastFrozenColumnIndex,
       frozenRightColumnCount,
       headerRowsCount
@@ -322,6 +329,7 @@ export function useCalculatedColumns<R, SR>({
   return {
     columns,
     colSpanColumns,
+    rowSpanColumns,
     colOverscanStartIdx,
     colOverscanEndIdx,
     templateColumns,

@@ -6,6 +6,7 @@ export * from './domUtils';
 export * from './eventUtils';
 export * from './keyboardUtils';
 export * from './renderMeasuringCells';
+export * from './rowSpanUtils';
 export * from './styleUtils';
 
 export const { min, max, floor, abs } = Math;

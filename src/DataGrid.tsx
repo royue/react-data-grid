@@ -30,6 +30,7 @@ import {
   getColSpan,
   getLeftRightKey,
   getNextActivePosition,
+  getRowSpan,
   isCellEditableUtil,
   isCtrlKeyHeldDown,
   isDefaultCellInput,
@@ -52,6 +53,7 @@ import type {
   ColumnWidths,
   Direction,
   FillEvent,
+  IterateOverViewportColumnsForRow,
   Maybe,
   Position,
   Renderers,
@@ -301,6 +303,14 @@ type DataGridImplProps<R, SR, K extends Key> = Omit<
   'expandable' | 'rowGrouping'
 >;
 
+interface RowSpanRange {
+  readonly rowIdx: number;
+  readonly colIdx: number;
+  readonly colSpan: number;
+  readonly rowSpan: number;
+  readonly rowSpanHeight: number;
+}
+
 function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplProps<R, SR, K>) {
   const {
     ref,
@@ -415,6 +425,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
   const {
     columns,
     colSpanColumns,
+    rowSpanColumns,
     lastFrozenColumnIndex,
     headerRowsCount,
     colOverscanStartIdx,
@@ -539,6 +550,73 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     enableVirtualization
   });
 
+  const { rowSpanRangesByCell, rowSpanRangesByRow } = useMemo(() => {
+    const rowSpanRangesByCell = new Map<string, RowSpanRange>();
+    const rowSpanRangesByRow = new Map<number, RowSpanRange[]>();
+
+    if (rowSpanColumns.length === 0) {
+      return { rowSpanRangesByCell, rowSpanRangesByRow };
+    }
+
+    function getCellKey(rowIdx: number, colIdx: number) {
+      return `${rowIdx}:${colIdx}`;
+    }
+
+    function isCellCovered(rowIdx: number, colIdx: number) {
+      const ranges = rowSpanRangesByRow.get(rowIdx);
+      if (ranges === undefined) return false;
+
+      return ranges.some((range) => {
+        return colIdx >= range.colIdx && colIdx < range.colIdx + range.colSpan;
+      });
+    }
+
+    function getRowSpanHeight(rowIdx: number, rowSpan: number) {
+      let rowSpanHeight = 0;
+      for (let index = rowIdx; index < rowIdx + rowSpan; index++) {
+        rowSpanHeight += getRowHeight(index);
+      }
+      return rowSpanHeight;
+    }
+
+    for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+      const row = rows[rowIdx];
+
+      for (const column of rowSpanColumns) {
+        if (isCellCovered(rowIdx, column.idx)) continue;
+
+        const rowSpan = getRowSpan(column, { type: 'ROW', row }, rows.length - rowIdx);
+        if (rowSpan === undefined) continue;
+
+        const colSpan =
+          getColSpan(column, lastFrozenColumnIndex, firstRightFrozenColumnIndex, {
+            type: 'ROW',
+            row
+          }) ?? 1;
+        const range: RowSpanRange = {
+          rowIdx,
+          colIdx: column.idx,
+          colSpan,
+          rowSpan,
+          rowSpanHeight: getRowSpanHeight(rowIdx, rowSpan)
+        };
+
+        rowSpanRangesByCell.set(getCellKey(rowIdx, column.idx), range);
+
+        for (let index = rowIdx + 1; index < rowIdx + rowSpan; index++) {
+          const ranges = rowSpanRangesByRow.get(index);
+          if (ranges === undefined) {
+            rowSpanRangesByRow.set(index, [range]);
+          } else {
+            ranges.push(range);
+          }
+        }
+      }
+    }
+
+    return { rowSpanRangesByCell, rowSpanRangesByRow };
+  }, [firstRightFrozenColumnIndex, getRowHeight, lastFrozenColumnIndex, rows, rowSpanColumns]);
+
   const {
     viewportColumns,
     iterateOverViewportColumnsForRow,
@@ -556,6 +634,37 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     topSummaryRows,
     bottomSummaryRows
   });
+
+  function getRowSpanCellKey(rowIdx: number, colIdx: number) {
+    return `${rowIdx}:${colIdx}`;
+  }
+
+  function getRowSpanRange(rowIdx: number, colIdx: number) {
+    return rowSpanRangesByCell.get(getRowSpanCellKey(rowIdx, colIdx));
+  }
+
+  function getRowSpanRangeCoveringCell(rowIdx: number, colIdx: number) {
+    const ranges = rowSpanRangesByRow.get(rowIdx);
+    if (ranges === undefined) return undefined;
+
+    return ranges.find((range) => {
+      return colIdx >= range.colIdx && colIdx < range.colIdx + range.colSpan;
+    });
+  }
+
+  function getRowSpanAwareColumnIterator(
+    rowIdx: number,
+    iterator: IterateOverViewportColumnsForRow<R, SR>
+  ): IterateOverViewportColumnsForRow<R, SR> {
+    return function* (activeIdx, args) {
+      for (const [column, isCellActive, colSpan] of iterator(activeIdx, args)) {
+        if (getRowSpanRangeCoveringCell(rowIdx, column.idx) !== undefined) continue;
+
+        const range = getRowSpanRange(rowIdx, column.idx);
+        yield [column, isCellActive, colSpan, range?.rowSpan, range?.rowSpanHeight];
+      }
+    };
+  }
 
   const { gridTemplateColumns, handleColumnResize } = useColumnWidths(
     columns,
@@ -864,11 +973,63 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
   function isCellEditable(position: Position): boolean {
     return (
       validatePosition(position).isCellInViewport &&
+      getRowSpanRangeCoveringCell(position.rowIdx, position.idx) === undefined &&
       isCellEditableUtil(columns[position.idx], rows[position.rowIdx])
     );
   }
 
-  function setPosition(position: Position, options?: SetActivePositionOptions): void {
+  function getRowSpanRootPosition(position: Position): Position {
+    const range = getRowSpanRangeCoveringCell(position.rowIdx, position.idx);
+    return range === undefined ? position : { rowIdx: range.rowIdx, idx: range.colIdx };
+  }
+
+  function getNextPositionAfterRowSpan(
+    position: Position,
+    key: string,
+    shiftKey: boolean
+  ): Position {
+    let nextPosition = position;
+
+    for (let i = 0; i < rows.length + columns.length; i++) {
+      if (!validatePosition(nextPosition).isCellInViewport) return nextPosition;
+
+      const range = getRowSpanRangeCoveringCell(nextPosition.rowIdx, nextPosition.idx);
+      if (range === undefined) return nextPosition;
+
+      switch (key) {
+        case 'ArrowDown':
+        case 'PageDown':
+          nextPosition = { ...nextPosition, rowIdx: range.rowIdx + range.rowSpan };
+          break;
+        case 'ArrowUp':
+        case 'PageUp':
+          nextPosition = { ...nextPosition, rowIdx: range.rowIdx };
+          break;
+        case rightKey:
+          nextPosition = { ...nextPosition, idx: range.colIdx + range.colSpan };
+          break;
+        case leftKey:
+          nextPosition = { ...nextPosition, idx: range.colIdx - 1 };
+          break;
+        case 'Tab':
+          nextPosition = shiftKey
+            ? { ...nextPosition, idx: range.colIdx - 1 }
+            : { ...nextPosition, idx: range.colIdx + range.colSpan };
+          break;
+        default:
+          return getRowSpanRootPosition(nextPosition);
+      }
+
+      if (!validatePosition(nextPosition).isPositionInActiveBounds) {
+        return activePosition;
+      }
+    }
+
+    return activePosition;
+  }
+
+  function setPosition(rawPosition: Position, options?: SetActivePositionOptions): void {
+    const position = getRowSpanRootPosition(rawPosition);
     const { isPositionInActiveBounds } = validatePosition(position);
     if (!isPositionInActiveBounds) return;
     commitEditorChanges();
@@ -979,7 +1140,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     const nextPosition = getNextPosition(key, ctrlKey, shiftKey);
     if (isSamePosition(activePosition, nextPosition)) return;
 
-    const nextActivePosition = getNextActivePosition({
+    let nextActivePosition = getNextActivePosition({
       moveUp: key === 'ArrowUp',
       moveNext: key === rightKey || (key === 'Tab' && !shiftKey),
       columns,
@@ -991,11 +1152,13 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
       mainHeaderRowIdx,
       maxRowIdx,
       lastFrozenColumnIndex,
+      firstRightFrozenColumnIndex,
       cellNavigationMode,
       activePosition,
       nextPosition,
       nextPositionIsCellInActiveBounds: validatePosition(nextPosition).isCellInActiveBounds
     });
+    nextActivePosition = getNextPositionAfterRowSpan(nextActivePosition, key, shiftKey);
 
     setPosition(nextActivePosition, { shouldFocus: true });
   }
@@ -1025,7 +1188,11 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
 
     const isLastRow = rowIdx === maxRowIdx;
     const columnWidth = getColumnWidth(column);
-    const colSpan = column.colSpan?.({ type: 'ROW', row: getActiveRow() }) ?? 1;
+    const colSpan =
+      getColSpan(column, lastFrozenColumnIndex, firstRightFrozenColumnIndex, {
+        type: 'ROW',
+        row: getActiveRow()
+      }) ?? 1;
     const { insetInlineStart, ...style } = getCellStyle(column, colSpan);
     const marginEnd = 'calc(var(--rdg-drag-handle-size) * -0.5 + 1px)';
     const isLastColumn = column.idx + colSpan - 1 === maxColIdx;
@@ -1066,7 +1233,11 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
 
     const { row } = activePosition;
     const column = getActiveColumn();
-    const colSpan = getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row });
+    const colSpan = getColSpan(column, lastFrozenColumnIndex, firstRightFrozenColumnIndex, {
+      type: 'ROW',
+      row
+    });
+    const rowSpanRange = getRowSpanRange(rowIdx, column.idx);
 
     function closeEditor(shouldFocus: boolean) {
       const newPosition: ActivePosition = { idx: activePosition.idx, rowIdx, mode: 'ACTIVE' };
@@ -1096,6 +1267,8 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
         key={column.key}
         column={column}
         colSpan={colSpan}
+        rowSpan={rowSpanRange?.rowSpan}
+        rowSpanHeight={rowSpanRange?.rowSpanHeight}
         row={row}
         rowIdx={rowIdx}
         onRowChange={onRowChange}
@@ -1108,15 +1281,44 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
 
   function* iterateOverViewportRowIdx() {
     const activeRowIdx = activePosition.rowIdx;
+    const renderedRowIdxs = new Set<number>();
 
-    if (activePositionIsInViewport && activeRowIdx < rowOverscanStartIdx) {
-      yield activeRowIdx;
-    }
-    for (let rowIdx = rowOverscanStartIdx; rowIdx <= rowOverscanEndIdx; rowIdx++) {
+    function* renderRowIdx(rowIdx: number) {
+      if (renderedRowIdxs.has(rowIdx)) return;
+      renderedRowIdxs.add(rowIdx);
       yield rowIdx;
     }
+
+    if (activePositionIsInViewport && activeRowIdx < rowOverscanStartIdx) {
+      yield* renderRowIdx(activeRowIdx);
+    }
+
+    if (rowSpanRangesByRow.size > 0) {
+      const rowSpanStartRows = new Set<number>();
+      for (let rowIdx = rowOverscanStartIdx; rowIdx <= rowOverscanEndIdx; rowIdx++) {
+        const ranges = rowSpanRangesByRow.get(rowIdx);
+        if (ranges === undefined) continue;
+
+        for (const range of ranges) {
+          if (range.rowIdx < rowOverscanStartIdx) {
+            rowSpanStartRows.add(range.rowIdx);
+          }
+        }
+      }
+
+      for (const rowIdx of rowSpanStartRows
+        .values()
+        .toArray()
+        .sort((a, b) => a - b)) {
+        yield* renderRowIdx(rowIdx);
+      }
+    }
+
+    for (let rowIdx = rowOverscanStartIdx; rowIdx <= rowOverscanEndIdx; rowIdx++) {
+      yield* renderRowIdx(rowIdx);
+    }
     if (activePositionIsInViewport && activeRowIdx > rowOverscanEndIdx) {
-      yield activeRowIdx;
+      yield* renderRowIdx(activeRowIdx);
     }
   }
 
@@ -1132,6 +1334,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
           isActiveRow && (rowIdx < rowOverscanStartIdx || rowIdx > rowOverscanEndIdx)
             ? iterateOverViewportColumnsForRowOutsideOfViewport
             : iterateOverViewportColumnsForRow;
+        const iterateOverRowColumns = getRowSpanAwareColumnIterator(rowIdx, iterateOverColumns);
 
         const row = rows[rowIdx];
         const gridRowStart = headerAndTopSummaryRowsCount + rowIdx + 1;
@@ -1148,7 +1351,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
           'aria-selected': isSelectable ? isRowSelected : undefined,
           rowIdx,
           row,
-          iterateOverViewportColumnsForRow: iterateOverColumns,
+          iterateOverViewportColumnsForRow: iterateOverRowColumns,
           isRowSelectionDisabled: isRowSelectionDisabled?.(row) ?? false,
           isRowSelected,
           onCellMouseDown: onCellMouseDownLatest,

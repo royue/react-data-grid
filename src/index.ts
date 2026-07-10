@@ -50,6 +50,7 @@ export type {
   RenderSortStatusProps,
   RenderSummaryCellProps,
   RowHeightArgs,
+  RowSpanArgs,
   RowsChangeData,
   SelectHeaderRowEvent,
   SelectRowEvent,
