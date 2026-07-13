@@ -1,4 +1,4 @@
-# react-data-grid
+# @jiuge/react-data-grid
 
 [![npm-badge]][npm-url]
 [![type-badge]][npm-url]
@@ -53,31 +53,31 @@ The DataGrid component is designed to handle large datasets efficiently while of
 
 ## Installation
 
-Install `react-data-grid` using your favorite package manager:
+Install `@jiuge/react-data-grid` using your favorite package manager:
 
 ```sh
-npm i react-data-grid
+npm i @jiuge/react-data-grid
 ```
 
 ```sh
-pnpm add react-data-grid
+pnpm add @jiuge/react-data-grid
 ```
 
 ```sh
-yarn add react-data-grid
+yarn add @jiuge/react-data-grid
 ```
 
 ```sh
-bun add react-data-grid
+bun add @jiuge/react-data-grid
 ```
 
 Additionally, import the default styles in your application:
 
 ```tsx
-import 'react-data-grid/lib/styles.css';
+import '@jiuge/react-data-grid/lib/styles.css';
 ```
 
-`react-data-grid` is published as ECMAScript modules for evergreen browsers, bundlers, and server-side rendering.
+`@jiuge/react-data-grid` is published as ECMAScript modules for evergreen browsers, bundlers, and server-side rendering.
 
 > **Important** <br />
 > Vite 8+ by default uses `lightningcss` to minify css which has a [bug minifying light-dark syntax](https://github.com/parcel-bundler/lightningcss/issues/873). You can tweak the `cssMinify` or `cssTarget` [settings](https://main.vite.dev/config/build-options) as a workaround.
@@ -92,12 +92,12 @@ build: {
 
 ## Getting started
 
-Here is a basic example of how to use `react-data-grid` in your React application:
+Here is a basic example of how to use `@jiuge/react-data-grid` in your React application:
 
 ```tsx
-import 'react-data-grid/lib/styles.css';
+import '@jiuge/react-data-grid/lib/styles.css';
 
-import { DataGrid, type Column } from 'react-data-grid';
+import { DataGrid, type Column } from '@jiuge/react-data-grid';
 
 interface Row {
   id: number;
@@ -281,7 +281,7 @@ Rows pinned at the bottom of the grid for summary purposes.
 Function to return a unique key/identifier for each row. `rowKeyGetter` is required for row selection to work.
 
 ```tsx
-import { DataGrid } from 'react-data-grid';
+import { DataGrid } from '@jiuge/react-data-grid';
 
 interface Row {
   id: number;
@@ -310,7 +310,7 @@ The second parameter is an object with an `indexes` array highlighting which row
 
 ```tsx
 import { useState } from 'react';
-import { DataGrid } from 'react-data-grid';
+import { DataGrid } from '@jiuge/react-data-grid';
 
 function MyGrid() {
   const [rows, setRows] = useState(initialRows);
@@ -396,7 +396,7 @@ Callback triggered when the selection changes.
 
 ```tsx
 import { useState } from 'react';
-import { DataGrid, SelectColumn } from 'react-data-grid';
+import { DataGrid, SelectColumn } from '@jiuge/react-data-grid';
 
 const rows: readonly Row[] = [...];
 
@@ -437,7 +437,7 @@ Expanded detail rows are rendered at the grid viewport width. When the grid scro
 
 ```tsx
 import { useState } from 'react';
-import { DataGrid, type Column } from 'react-data-grid';
+import { DataGrid, type Column } from '@jiuge/react-data-grid';
 
 interface Row {
   id: number;
@@ -493,7 +493,7 @@ Callback triggered when sorting changes.
 
 ```tsx
 import { useState } from 'react';
-import { DataGrid, SelectColumn } from 'react-data-grid';
+import { DataGrid, SelectColumn } from '@jiuge/react-data-grid';
 
 const rows: readonly Row[] = [...];
 
@@ -689,7 +689,7 @@ See the [`Renderers`](#rendererstrow-tsummaryrow) type for the full shape.
 Example of replacing default components:
 
 ```tsx
-import { DataGrid, type Renderers } from 'react-data-grid';
+import { DataGrid, type Renderers } from '@jiuge/react-data-grid';
 
 const customRenderers: Renderers<Row, SummaryRow> = {
   // Custom row render function
@@ -722,7 +722,7 @@ const customRenderers: Renderers<Row, SummaryRow> = {
 The default `<Row />` component can be wrapped via the `renderRow` prop to add contexts or tweak props:
 
 ```tsx
-import { DataGrid, Row, type RenderRowProps } from 'react-data-grid';
+import { DataGrid, Row, type RenderRowProps } from '@jiuge/react-data-grid';
 
 interface MyRow {
   id: number;
@@ -746,7 +746,7 @@ function MyGrid() {
 Function to apply custom class names to rows.
 
 ```tsx
-import { DataGrid } from 'react-data-grid';
+import { DataGrid } from '@jiuge/react-data-grid';
 
 function rowClass(row: Row, rowIdx: number) {
   return rowIdx % 2 === 0 ? 'even' : 'odd';
@@ -874,7 +874,7 @@ Enables row grouping on `DataGrid`.
 **Required.** An array of column keys to group by. The order determines the grouping hierarchy (first key is the top level, second key is nested under the first, etc.).
 
 ```tsx
-import { DataGrid, type Column } from 'react-data-grid';
+import { DataGrid, type Column } from '@jiuge/react-data-grid';
 
 interface Row {
   id: number;
@@ -922,7 +922,7 @@ function rowGrouper(rows: readonly Row[], columnKey: string): Record<string, rea
 
 ```tsx
 import { useState } from 'react';
-import { DataGrid } from 'react-data-grid';
+import { DataGrid } from '@jiuge/react-data-grid';
 
 function MyGrid() {
   const [expandedGroupIds, setExpandedGroupIds] = useState((): ReadonlySet<unknown> => new Set());
@@ -1098,7 +1098,7 @@ The default header cell renderer. Renders sortable columns with sort indicators.
 **Example:**
 
 ```tsx
-import { renderHeaderCell, type Column } from 'react-data-grid';
+import { renderHeaderCell, type Column } from '@jiuge/react-data-grid';
 
 const columns: readonly Column<Row>[] = [
   {
@@ -1117,7 +1117,7 @@ A basic text editor provided for convenience.
 **Example:**
 
 ```tsx
-import { renderTextEditor, type Column } from 'react-data-grid';
+import { renderTextEditor, type Column } from '@jiuge/react-data-grid';
 
 const columns: readonly Column<Row>[] = [
   {
@@ -1161,7 +1161,7 @@ Renders a checkbox input with proper styling and accessibility.
 **Example:**
 
 ```tsx
-import { DataGrid, renderCheckbox } from 'react-data-grid';
+import { DataGrid, renderCheckbox } from '@jiuge/react-data-grid';
 
 <DataGrid
   renderers={{
@@ -1181,7 +1181,7 @@ The default group cell renderer used by the columns used for grouping (`groupBy`
 **Example:**
 
 ```tsx
-import { renderToggleGroup, type Column } from 'react-data-grid';
+import { renderToggleGroup, type Column } from '@jiuge/react-data-grid';
 
 const columns: readonly Column<Row>[] = [
   {
@@ -1199,7 +1199,7 @@ The default cell renderer that renders the value of `row[column.key]`.
 **Example:**
 
 ```tsx
-import { renderValue, type Column } from 'react-data-grid';
+import { renderValue, type Column } from '@jiuge/react-data-grid';
 
 const columns: readonly Column<Row>[] = [
   {
@@ -1225,7 +1225,7 @@ import {
   renderSortIcon,
   renderSortPriority,
   type Renderers
-} from 'react-data-grid';
+} from '@jiuge/react-data-grid';
 
 // custom implementations of renderers
 const defaultGridRenderers: Renderers<unknown, unknown> = {
@@ -1259,7 +1259,7 @@ Includes checkbox renderers for header, regular rows, and grouped rows.
 **Example:**
 
 ```tsx
-import { DataGrid, SelectColumn, type Column } from 'react-data-grid';
+import { DataGrid, SelectColumn, type Column } from '@jiuge/react-data-grid';
 
 const columns: readonly Column<Row>[] = [SelectColumn, ...otherColumns];
 
@@ -1287,7 +1287,7 @@ The key used for the `SelectColumn`. Useful for identifying or filtering the sel
 **Example:**
 
 ```tsx
-import { SELECT_COLUMN_KEY } from 'react-data-grid';
+import { SELECT_COLUMN_KEY } from '@jiuge/react-data-grid';
 
 const nonSelectColumns = columns.filter((column) => column.key !== SELECT_COLUMN_KEY);
 ```
@@ -1429,7 +1429,7 @@ Function to determine how many columns this cell should span. Returns the number
 **Example:**
 
 ```tsx
-import type { Column } from 'react-data-grid';
+import type { Column } from '@jiuge/react-data-grid';
 
 const columns: readonly Column<Row>[] = [
   {
@@ -1452,7 +1452,7 @@ Function to determine how many rows this cell should span. Returns the number of
 **Example:**
 
 ```tsx
-import type { Column } from 'react-data-grid';
+import type { Column } from '@jiuge/react-data-grid';
 
 const columns: readonly Column<Row>[] = [
   {
@@ -1535,7 +1535,7 @@ interface ColumnGroup<R, SR = unknown> {
 **Example:**
 
 ```tsx
-import type { ColumnOrColumnGroup } from 'react-data-grid';
+import type { ColumnOrColumnGroup } from '@jiuge/react-data-grid';
 
 const columns: readonly ColumnOrColumnGroup<Row>[] = [
   {
@@ -1625,7 +1625,7 @@ interface RenderCellProps<TRow, TSummaryRow = unknown> {
 **Example:**
 
 ```tsx
-import type { RenderCellProps } from 'react-data-grid';
+import type { RenderCellProps } from '@jiuge/react-data-grid';
 
 function renderCell({ row, column, onRowChange }: RenderCellProps<MyRow>) {
   return (
@@ -1667,7 +1667,7 @@ interface RenderEditCellProps<TRow, TSummaryRow = unknown> {
 **Example:**
 
 ```tsx
-import type { RenderEditCellProps } from 'react-data-grid';
+import type { RenderEditCellProps } from '@jiuge/react-data-grid';
 
 function CustomEditor({ row, column, onRowChange, onClose }: RenderEditCellProps<MyRow>) {
   return (
@@ -1771,7 +1771,7 @@ interface CellMouseArgs<TRow, TSummaryRow = unknown> {
 **Example:**
 
 ```tsx
-import type { CellMouseArgs, CellMouseEvent } from 'react-data-grid';
+import type { CellMouseArgs, CellMouseEvent } from '@jiuge/react-data-grid';
 
 function onCellClick(args: CellMouseArgs<Row>, event: CellMouseEvent) {
   console.log('Clicked cell at row', args.rowIdx, 'column', args.column.key);
@@ -1804,7 +1804,7 @@ Returns whether `preventGridDefault` was called.
 **Example:**
 
 ```tsx
-import type { CellMouseArgs, CellMouseEvent } from 'react-data-grid';
+import type { CellMouseArgs, CellMouseEvent } from '@jiuge/react-data-grid';
 
 function onCellClick(args: CellMouseArgs<Row>, event: CellMouseEvent) {
   if (args.column.key === 'actions') {
@@ -1865,7 +1865,7 @@ interface EditCellKeyDownArgs<TRow, TSummaryRow = unknown> {
 **Example:**
 
 ```tsx
-import type { CellKeyboardEvent, CellKeyDownArgs } from 'react-data-grid';
+import type { CellKeyboardEvent, CellKeyDownArgs } from '@jiuge/react-data-grid';
 
 function onCellKeyDown(args: CellKeyDownArgs<Row>, event: CellKeyboardEvent) {
   if (args.mode === 'EDIT' && event.key === 'Escape') {
@@ -1932,7 +1932,7 @@ type ColSpanArgs<TRow, TSummaryRow> =
 **Example:**
 
 ```tsx
-import type { Column } from 'react-data-grid';
+import type { Column } from '@jiuge/react-data-grid';
 
 const columns: readonly Column<Row>[] = [
   {
@@ -1962,7 +1962,7 @@ interface RowSpanArgs<TRow> {
 **Example:**
 
 ```tsx
-import type { Column } from 'react-data-grid';
+import type { Column } from '@jiuge/react-data-grid';
 
 const columns: readonly Column<Row>[] = [
   {
@@ -2163,7 +2163,7 @@ interface DataGridHandle {
 
 ```tsx
 import { useRef } from 'react';
-import { DataGrid, DataGridHandle } from 'react-data-grid';
+import { DataGrid, DataGridHandle } from '@jiuge/react-data-grid';
 
 function MyGrid() {
   const gridRef = useRef<DataGridHandle>(null);
@@ -2216,12 +2216,12 @@ type Maybe<T> = T | undefined | null;
 - `SR`, `TSummaryRow`: Summary row type
 - `K`: Row key type
 
-[ci-badge]: https://github.com/Comcast/react-data-grid/workflows/CI/badge.svg
-[ci-url]: https://github.com/Comcast/react-data-grid/actions
-[codecov-badge]: https://codecov.io/gh/Comcast/react-data-grid/branch/main/graph/badge.svg?token=cvrRSWiz0Q
-[codecov-url]: https://app.codecov.io/gh/Comcast/react-data-grid
-[npm-badge]: https://img.shields.io/npm/v/react-data-grid
-[npm-url]: https://www.npmjs.com/package/react-data-grid
-[size-badge]: https://img.shields.io/bundlephobia/minzip/react-data-grid
-[size-url]: https://bundlephobia.com/package/react-data-grid
-[type-badge]: https://img.shields.io/npm/types/react-data-grid
+[ci-badge]: https://github.com/royue/react-data-grid/workflows/CI/badge.svg
+[ci-url]: https://github.com/royue/react-data-grid/actions
+[codecov-badge]: https://codecov.io/gh/royue/react-data-grid/branch/main/graph/badge.svg?token=cvrRSWiz0Q
+[codecov-url]: https://app.codecov.io/gh/royue/react-data-grid
+[npm-badge]: https://img.shields.io/npm/v/%40jiuge%2Freact-data-grid
+[npm-url]: https://www.npmjs.com/package/%40jiuge%2Freact-data-grid
+[size-badge]: https://img.shields.io/bundlephobia/minzip/%40jiuge%2Freact-data-grid
+[size-url]: https://bundlephobia.com/package/%40jiuge%2Freact-data-grid
+[type-badge]: https://img.shields.io/npm/types/%40jiuge%2Freact-data-grid

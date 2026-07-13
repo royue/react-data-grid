@@ -1,17 +1,17 @@
 {
-  "name": "react-data-grid",
-  "version": "7.0.0-beta.59",
+  "name": "@jiuge/react-data-grid",
+  "version": "0.1.0",
   "description": "Feature-rich and customizable data grid React component",
   "keywords": [
     "data grid",
     "react"
   ],
-  "homepage": "https://github.com/Comcast/react-data-grid#readme",
-  "bugs": "https://github.com/Comcast/react-data-grid/issues",
+  "homepage": "https://github.com/royue/react-data-grid#readme",
+  "bugs": "https://github.com/royue/react-data-grid/issues",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Comcast/react-data-grid.git"
+    "url": "git+https://github.com/royue/react-data-grid.git"
   },
   "files": [
     "lib"
