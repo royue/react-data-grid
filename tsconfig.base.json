@@ -13,6 +13,7 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "./.cache/ts",
+    "strictNullChecks": true,
     "target": "esnext",
     "verbatimModuleSyntax": true
   }

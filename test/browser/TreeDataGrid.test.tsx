@@ -160,6 +160,16 @@ test('should group by single column', async () => {
   await testRowCount(4);
 });
 
+test('should render column separators in group rows', async () => {
+  await setup(['country']);
+  const groupCells = getRowWithCell(page.getCell({ name: 'USA' })).getCell();
+  await testCount(groupCells, columns.length);
+
+  for (let index = 0; index < columns.length; index++) {
+    expect(getComputedStyle(groupCells.nth(index).element()).borderInlineEndStyle).toBe('solid');
+  }
+});
+
 test('should group by multiple columns', async () => {
   await setup(['country', 'year']);
   await expect.element(treeGrid).toHaveAttribute('aria-rowcount', '13');

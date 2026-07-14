@@ -92,6 +92,7 @@ export default function Nav({ direction, onDirectionChange }: Props) {
         <Link to="/ContextMenu">Context Menu</Link>
         <Link to="/CustomizableRenderers">Customizable Renderers</Link>
         <Link to="/RowGrouping">Row Grouping</Link>
+        <Link to="/TreeData">Tree Data</Link>
         <Link to="/HeaderFilters">Header Filters</Link>
         <Link to="/InfiniteScrolling">Infinite Scrolling</Link>
         <Link to="/MasterDetail">Master Detail</Link>
@@ -129,11 +130,7 @@ export default function Nav({ direction, onDirectionChange }: Props) {
         >
           Discussions
         </a>
-        <a
-          href="https://github.com/royue/react-data-grid/issues"
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a href="https://github.com/royue/react-data-grid/issues" target="_blank" rel="noreferrer">
           Issues
         </a>
       </nav>

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VariableRowHeightRouteImport } from './routes/VariableRowHeight'
 import { Route as TreeViewRouteImport } from './routes/TreeView'
+import { Route as TreeDataRouteImport } from './routes/TreeData'
 import { Route as ScrollToCellRouteImport } from './routes/ScrollToCell'
 import { Route as RowsReorderingRouteImport } from './routes/RowsReordering'
 import { Route as RowGroupingRouteImport } from './routes/RowGrouping'
@@ -40,6 +41,11 @@ const VariableRowHeightRoute = VariableRowHeightRouteImport.update({
 const TreeViewRoute = TreeViewRouteImport.update({
   id: '/TreeView',
   path: '/TreeView',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TreeDataRoute = TreeDataRouteImport.update({
+  id: '/TreeData',
+  path: '/TreeData',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScrollToCellRoute = ScrollToCellRouteImport.update({
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/RowGrouping': typeof RowGroupingRoute
   '/RowsReordering': typeof RowsReorderingRoute
   '/ScrollToCell': typeof ScrollToCellRoute
+  '/TreeData': typeof TreeDataRoute
   '/TreeView': typeof TreeViewRoute
   '/VariableRowHeight': typeof VariableRowHeightRoute
 }
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/RowGrouping': typeof RowGroupingRoute
   '/RowsReordering': typeof RowsReorderingRoute
   '/ScrollToCell': typeof ScrollToCellRoute
+  '/TreeData': typeof TreeDataRoute
   '/TreeView': typeof TreeViewRoute
   '/VariableRowHeight': typeof VariableRowHeightRoute
 }
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/RowGrouping': typeof RowGroupingRoute
   '/RowsReordering': typeof RowsReorderingRoute
   '/ScrollToCell': typeof ScrollToCellRoute
+  '/TreeData': typeof TreeDataRoute
   '/TreeView': typeof TreeViewRoute
   '/VariableRowHeight': typeof VariableRowHeightRoute
 }
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/RowGrouping'
     | '/RowsReordering'
     | '/ScrollToCell'
+    | '/TreeData'
     | '/TreeView'
     | '/VariableRowHeight'
   fileRoutesByTo: FileRoutesByTo
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/RowGrouping'
     | '/RowsReordering'
     | '/ScrollToCell'
+    | '/TreeData'
     | '/TreeView'
     | '/VariableRowHeight'
   id:
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/RowGrouping'
     | '/RowsReordering'
     | '/ScrollToCell'
+    | '/TreeData'
     | '/TreeView'
     | '/VariableRowHeight'
   fileRoutesById: FileRoutesById
@@ -312,6 +324,7 @@ export interface RootRouteChildren {
   RowGroupingRoute: typeof RowGroupingRoute
   RowsReorderingRoute: typeof RowsReorderingRoute
   ScrollToCellRoute: typeof ScrollToCellRoute
+  TreeDataRoute: typeof TreeDataRoute
   TreeViewRoute: typeof TreeViewRoute
   VariableRowHeightRoute: typeof VariableRowHeightRoute
 }
@@ -330,6 +343,13 @@ declare module '@tanstack/react-router' {
       path: '/TreeView'
       fullPath: '/TreeView'
       preLoaderRoute: typeof TreeViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/TreeData': {
+      id: '/TreeData'
+      path: '/TreeData'
+      fullPath: '/TreeData'
+      preLoaderRoute: typeof TreeDataRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ScrollToCell': {
@@ -496,6 +516,7 @@ const rootRouteChildren: RootRouteChildren = {
   RowGroupingRoute: RowGroupingRoute,
   RowsReorderingRoute: RowsReorderingRoute,
   ScrollToCellRoute: ScrollToCellRoute,
+  TreeDataRoute: TreeDataRoute,
   TreeViewRoute: TreeViewRoute,
   VariableRowHeightRoute: VariableRowHeightRoute,
 }

@@ -6,17 +6,12 @@ import { classnames } from './utils';
 import type { BaseRenderRowProps, GroupRow, Omit } from './types';
 import { SELECT_COLUMN_KEY } from './Columns';
 import GroupCell from './GroupCell';
-import { cell, cellFrozen } from './style/cell';
 import { rowClassname, rowActiveClassname } from './style/row';
 
 const groupRow = css`
   @layer rdg.GroupedRow {
     &:not([aria-selected='true']) {
       background-color: var(--rdg-header-background-color);
-    }
-
-    > .${cell}:not(:last-child, .${cellFrozen}), > :nth-last-child(n + 2 of .${cellFrozen}) {
-      border-inline-end: none;
     }
   }
 `;
