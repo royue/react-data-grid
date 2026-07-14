@@ -10,7 +10,7 @@ import { rowClassname, rowActiveClassname } from './style/row';
 
 const groupRow = css`
   @layer rdg.GroupedRow {
-    &:not([aria-selected='true']) {
+    &:not([aria-selected='true'], [aria-level='1']) {
       background-color: var(--rdg-header-background-color);
     }
   }

@@ -170,6 +170,20 @@ test('should render column separators in group rows', async () => {
   }
 });
 
+test('should render top-level groups without a group background', async () => {
+  await setup(['country', 'year']);
+  const { backgroundColor } = getComputedStyle(treeGrid.element());
+  const topLevelGroup = getRowWithCell(page.getCell({ name: 'USA' }));
+
+  await expect.element(topLevelGroup).toHaveAttribute('aria-level', '1');
+  expect(getComputedStyle(topLevelGroup.element()).backgroundColor).toBe(backgroundColor);
+
+  await userEvent.click(page.getCell({ name: 'USA' }));
+  const nestedGroup = getRowWithCell(page.getCell({ name: '2020' }));
+  await expect.element(nestedGroup).toHaveAttribute('aria-level', '2');
+  expect(getComputedStyle(nestedGroup.element()).backgroundColor).not.toBe(backgroundColor);
+});
+
 test('should group by multiple columns', async () => {
   await setup(['country', 'year']);
   await expect.element(treeGrid).toHaveAttribute('aria-rowcount', '13');
