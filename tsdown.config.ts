@@ -9,9 +9,6 @@ export default defineConfig({
   target: ['baseline-widely-available', 'node24.0.0'],
   platform: 'neutral',
   sourcemap: true,
-  deps: {
-    skipNodeModulesBundle: true
-  },
   css: {
     fileName: 'styles.css',
     lightningcss: {

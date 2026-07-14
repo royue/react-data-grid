@@ -1,4 +1,4 @@
-import { useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type { Key, KeyboardEvent } from 'react';
 import { flushSync } from 'react-dom';
 
@@ -140,6 +140,7 @@ type SharedDivProps = Pick<
 >;
 
 export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends SharedDivProps {
+  // eslint-disable-next-line @eslint-react/no-unused-props -- React 18 passes ref to forwardRef
   ref?: Maybe<React.Ref<DataGridHandle>>;
   wrapperRef?: Maybe<React.Ref<DataGridHandle>>;
   /**
@@ -263,20 +264,36 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
  *
  * <DataGrid columns={columns} rows={rows} />
  */
-export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridProps<R, SR, K>) {
-  const { rowGrouping } = props;
+function DataGridComponent<R, SR, K extends Key>(
+  props: DataGridProps<R, SR, K>,
+  forwardedRef: React.ForwardedRef<DataGridHandle>
+) {
+  const internalProps: DataGridInternalProps<R, SR, K> = { ...props, forwardedRef };
+  const { rowGrouping } = internalProps;
   if (rowGrouping != null) {
-    return <DataGridWithRowGrouping {...props} rowGrouping={rowGrouping} />;
+    return <DataGridWithRowGrouping {...internalProps} rowGrouping={rowGrouping} />;
   }
-  const { expandable } = props;
+  const { expandable } = internalProps;
   if (expandable != null) {
-    return <DataGridWithExpandableRows {...props} expandable={expandable} />;
+    return <DataGridWithExpandableRows {...internalProps} expandable={expandable} />;
   }
 
-  return <DataGridImpl {...props} />;
+  return <DataGridImpl {...internalProps} />;
 }
 
-interface DataGridWithRowGroupingProps<R, SR, K extends Key> extends DataGridProps<R, SR, K> {
+export const DataGrid = forwardRef(DataGridComponent) as <R, SR = unknown, K extends Key = Key>(
+  props: DataGridProps<R, SR, K>
+) => React.JSX.Element;
+
+interface DataGridInternalProps<R, SR, K extends Key> extends DataGridProps<R, SR, K> {
+  forwardedRef: React.ForwardedRef<DataGridHandle>;
+}
+
+interface DataGridWithRowGroupingProps<R, SR, K extends Key> extends DataGridInternalProps<
+  R,
+  SR,
+  K
+> {
   rowGrouping: RowGroupingOptions<R>;
 }
 
@@ -284,10 +301,14 @@ function DataGridWithRowGrouping<R, SR = unknown, K extends Key = Key>(
   props: DataGridWithRowGroupingProps<R, SR, K>
 ) {
   const dataGridProps = useRowGrouping(props);
-  return <DataGridImpl {...dataGridProps} />;
+  return <DataGridImpl {...dataGridProps} forwardedRef={props.forwardedRef} />;
 }
 
-interface DataGridWithExpandableRowsProps<R, SR, K extends Key> extends DataGridProps<R, SR, K> {
+interface DataGridWithExpandableRowsProps<R, SR, K extends Key> extends DataGridInternalProps<
+  R,
+  SR,
+  K
+> {
   expandable: ExpandableOptions<R, K>;
 }
 
@@ -295,11 +316,11 @@ function DataGridWithExpandableRows<R, SR = unknown, K extends Key = Key>(
   props: DataGridWithExpandableRowsProps<R, SR, K>
 ) {
   const dataGridProps = useExpandableRows(props);
-  return <DataGridImpl {...dataGridProps} />;
+  return <DataGridImpl {...dataGridProps} forwardedRef={props.forwardedRef} />;
 }
 
 type DataGridImplProps<R, SR, K extends Key> = Omit<
-  DataGridProps<R, SR, K>,
+  DataGridInternalProps<R, SR, K>,
   'expandable' | 'rowGrouping'
 >;
 
@@ -313,7 +334,7 @@ interface RowSpanRange {
 
 function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplProps<R, SR, K>) {
   const {
-    ref,
+    forwardedRef,
     wrapperRef,
     // Grid and data Props
     columns: rawColumns,
@@ -717,7 +738,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     };
   }
 
-  useImperativeHandle(ref, getDataGridHandle);
+  useImperativeHandle(forwardedRef, getDataGridHandle);
   useImperativeHandle(wrapperRef, getDataGridHandle);
 
   /**

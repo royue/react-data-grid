@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { focusCell, focusRow } from '../utils';
 import type { CalculatedColumn, Position, StateSetter } from '../types';
+import { useLayoutEffect } from './useLayoutEffect';
 
 export interface ActivePosition extends Position {
   readonly mode: 'ACTIVE';

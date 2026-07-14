@@ -1,6 +1,7 @@
-import { useEffectEvent, useLayoutEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { css } from 'ecij';
 
+import { useLatestFunc, useLayoutEffect } from './hooks';
 import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } from './utils';
 import type {
   CellKeyboardEvent,
@@ -70,8 +71,8 @@ export default function EditCell<R, SR>({
 
   // We need to prevent the `useLayoutEffect` from cleaning up between re-renders,
   // as `onWindowCaptureMouseDown` might otherwise miss valid mousedown events.
-  // To that end we instead access the latest props via useEffectEvent.
-  const commitOnOutsideMouseDown = useEffectEvent(() => {
+  // To that end we instead access the latest props via useLatestFunc.
+  const commitOnOutsideMouseDown = useLatestFunc(() => {
     onClose(true, false);
   });
 
@@ -113,7 +114,7 @@ export default function EditCell<R, SR>({
       window.removeEventListener('mousedown', onWindowMouseDown);
       cancelTask();
     };
-  }, [commitOnOutsideClick]);
+  }, [commitOnOutsideClick, commitOnOutsideMouseDown]);
 
   function cancelTask() {
     captureEventRef.current = undefined;

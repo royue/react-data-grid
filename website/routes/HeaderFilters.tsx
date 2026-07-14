@@ -1,4 +1,4 @@
-import { createContext, use, useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import { faker } from '@faker-js/faker';
 import { createFileRoute } from '@tanstack/react-router';
 import { css } from 'ecij';
@@ -287,7 +287,7 @@ function HeaderFilters() {
           Clear Filters
         </button>
       </div>
-      <FilterContext value={filters}>
+      <FilterContext.Provider value={filters}>
         <DataGrid
           aria-label="Header Filters Example"
           className={filters.enabled ? filterContainerClassname : undefined}
@@ -299,7 +299,7 @@ function HeaderFilters() {
             scrollbarGutter: 'stable'
           }}
         />
-      </FilterContext>
+      </FilterContext.Provider>
       <datalist id="developers">
         {developerOptions.map(({ label, value }) => (
           <option key={value} value={value}>
@@ -318,7 +318,7 @@ function FilterRenderer<R>({
 }: RenderHeaderCellProps<R> & {
   children: (args: { tabIndex: number; filters: Filter }) => React.ReactElement;
 }) {
-  const filters = use(FilterContext)!;
+  const filters = useContext(FilterContext)!;
   return (
     <>
       <div>{column.name}</div>

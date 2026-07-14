@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import type { Key } from 'react';
 
 import type { Column, Maybe, Omit, RowHeightArgs } from './types';
@@ -26,15 +27,18 @@ export interface TreeDataGridProps<R, SR = unknown, K extends Key = Key> extends
   groupIdGetter?: Maybe<(groupKey: string, parentId?: string) => string>;
 }
 
-export function TreeDataGrid<R, SR = unknown, K extends Key = Key>({
-  groupBy,
-  rowGrouper,
-  expandedGroupIds,
-  onExpandedGroupIdsChange,
-  groupIdGetter,
-  rowHeight,
-  ...props
-}: TreeDataGridProps<R, SR, K>) {
+function TreeDataGridComponent<R, SR, K extends Key>(
+  {
+    groupBy,
+    rowGrouper,
+    expandedGroupIds,
+    onExpandedGroupIdsChange,
+    groupIdGetter,
+    rowHeight,
+    ...props
+  }: TreeDataGridProps<R, SR, K>,
+  ref: React.ForwardedRef<React.ComponentRef<typeof DataGrid>>
+) {
   const rowGrouping: RowGroupingOptions<R> = {
     groupBy,
     rowGrouper,
@@ -44,5 +48,13 @@ export function TreeDataGrid<R, SR = unknown, K extends Key = Key>({
     rowHeight
   };
 
-  return <DataGrid {...props} rowGrouping={rowGrouping} />;
+  return <DataGrid {...props} ref={ref} rowGrouping={rowGrouping} />;
 }
+
+export const TreeDataGrid = forwardRef(TreeDataGridComponent) as <
+  R,
+  SR = unknown,
+  K extends Key = Key
+>(
+  props: TreeDataGridProps<R, SR, K>
+) => React.JSX.Element;

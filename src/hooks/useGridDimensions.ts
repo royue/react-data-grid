@@ -1,4 +1,6 @@
-import { useCallback, useLayoutEffect, useSyncExternalStore, type RefObject } from 'react';
+import { useCallback, useSyncExternalStore, type RefObject } from 'react';
+
+import { useLayoutEffect } from './useLayoutEffect';
 
 const initialSize: ResizeObserverSize = {
   inlineSize: 1,

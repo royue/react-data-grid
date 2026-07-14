@@ -1,4 +1,4 @@
-import { createContext, use } from 'react';
+import { createContext, useContext } from 'react';
 
 import type { SelectHeaderRowEvent, SelectRowEvent } from '../types';
 
@@ -17,8 +17,8 @@ export const RowSelectionChangeContext = createContext<
 RowSelectionChangeContext.displayName = 'RowSelectionChangeContext';
 
 export function useRowSelection() {
-  const rowSelectionContext = use(RowSelectionContext);
-  const rowSelectionChangeContext = use(RowSelectionChangeContext);
+  const rowSelectionContext = useContext(RowSelectionContext);
+  const rowSelectionChangeContext = useContext(RowSelectionChangeContext);
 
   if (rowSelectionContext === undefined || rowSelectionChangeContext === undefined) {
     throw new Error('useRowSelection must be used within renderCell');
@@ -47,8 +47,8 @@ export const HeaderRowSelectionChangeContext = createContext<
 HeaderRowSelectionChangeContext.displayName = 'HeaderRowSelectionChangeContext';
 
 export function useHeaderRowSelection() {
-  const headerRowSelectionContext = use(HeaderRowSelectionContext);
-  const headerRowSelectionChangeContext = use(HeaderRowSelectionChangeContext);
+  const headerRowSelectionContext = useContext(HeaderRowSelectionContext);
+  const headerRowSelectionChangeContext = useContext(HeaderRowSelectionChangeContext);
 
   if (headerRowSelectionContext === undefined || headerRowSelectionChangeContext === undefined) {
     throw new Error('useHeaderRowSelection must be used within renderHeaderCell');

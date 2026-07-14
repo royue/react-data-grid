@@ -15,7 +15,7 @@ node --run test -- <path>    # single test, e.g. test/browser/rowHeight.test.ts
 
 ## Architecture
 
-react-data-grid is a data grid with **zero `dependencies`** (peer dependency: React 19.2+). It uses CSS Grid for layout and implements row/column virtualization in JS.
+react-data-grid is a data grid with **zero `dependencies`** (peer dependency: React 18.0+ or 19.0+). It uses CSS Grid for layout and implements row/column virtualization in JS.
 
 ```text
 src/
@@ -43,6 +43,7 @@ website/              # demo site (Vite + TanStack Router)
 - **TypeScript strict** with `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `erasableSyntaxOnly`. Distinguish missing properties from `undefined` values.
 - **`Maybe<T>`** (`T | undefined | null`) — used for all nullable column/render props. Do not use bare `T | undefined`.
 - **`NoInfer<>`** — wrap callback parameters to prevent reverse type inference into component generics.
+- **React 18/19 compatibility** — avoid React 19-only APIs and context provider shorthand. Components that accept refs use `forwardRef`; import the SSR-safe `useLayoutEffect` from `src/hooks` instead of React.
 - **CSS layers** — all styles live in nested `@layer rdg.<Name>` sub-layers (e.g. `rdg.Cell`, `rdg.Row`; declared in `src/style/layers.css`). Use `ecij` `css` tagged templates (build-time extraction, not runtime CSS-in-JS). Co-locate styles in component files; `src/style/` is for shared styles.
 - **Dual classnames** — components apply both a semantic class (`rdg-cell`) and a generated hash. Preserve both.
 - **Light/dark mode** — handled via CSS `light-dark()` + `color-scheme`, not JS.

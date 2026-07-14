@@ -19,7 +19,7 @@ The DataGrid component is designed to handle large datasets efficiently while of
 
 ## Features
 
-- [React 19.2+](package.json) support
+- [React 18.0+ and 19.0+](package.json) support
 - Evergreen browsers and server-side rendering support
 - Tree-shaking support with no external dependencies to keep your bundles slim
 - Great performance thanks to virtualization: columns and rows outside the viewport are not rendered
@@ -730,9 +730,9 @@ interface MyRow {
 
 function myRowRenderer(key: React.Key, props: RenderRowProps<MyRow>) {
   return (
-    <MyContext key={key} value={123}>
+    <MyContext.Provider key={key} value={123}>
       <Row {...props} />
-    </MyContext>
+    </MyContext.Provider>
   );
 }
 
@@ -1242,9 +1242,9 @@ const defaultGridRenderers: Renderers<unknown, unknown> = {
 
 function AppProvider({ children }) {
   return (
-    <DataGridDefaultRenderersContext value={defaultGridRenderers}>
+    <DataGridDefaultRenderersContext.Provider value={defaultGridRenderers}>
       {children}
-    </DataGridDefaultRenderersContext>
+    </DataGridDefaultRenderersContext.Provider>
   );
 }
 ```

@@ -1,4 +1,4 @@
-import { createContext, use } from 'react';
+import { createContext, useContext } from 'react';
 
 import type { Maybe, Renderers } from './types';
 
@@ -7,5 +7,5 @@ export const DataGridDefaultRenderersContext = createContext<Maybe<Renderers<any
 DataGridDefaultRenderersContext.displayName = 'DataGridDefaultRenderersContext';
 
 export function useDefaultRenderers<R, SR>(): Maybe<Renderers<R, SR>> {
-  return use(DataGridDefaultRenderersContext);
+  return useContext(DataGridDefaultRenderersContext);
 }
