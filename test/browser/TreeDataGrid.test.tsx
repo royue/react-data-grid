@@ -171,7 +171,7 @@ test('should render column separators in group rows', async () => {
 });
 
 test('should render top-level groups without a group background', async () => {
-  await setup(['country', 'year']);
+  await setup(['country', 'year', 'id']);
   const { backgroundColor } = getComputedStyle(treeGrid.element());
   const topLevelGroup = getRowWithCell(page.getCell({ name: 'USA' }));
 
@@ -181,7 +181,17 @@ test('should render top-level groups without a group background', async () => {
   await userEvent.click(page.getCell({ name: 'USA' }));
   const nestedGroup = getRowWithCell(page.getCell({ name: '2020' }));
   await expect.element(nestedGroup).toHaveAttribute('aria-level', '2');
-  expect(getComputedStyle(nestedGroup.element()).backgroundColor).not.toBe(backgroundColor);
+  const nestedBackgroundColor = getComputedStyle(nestedGroup.element()).backgroundColor;
+  expect(nestedBackgroundColor).not.toBe(backgroundColor);
+
+  await userEvent.click(page.getCell({ name: '2020' }));
+  const deepGroup = treeGrid.getBySelector('[role="row"][aria-level="3"]');
+  await testCount(deepGroup, 1);
+  expect(getComputedStyle(deepGroup.element()).backgroundColor).toBe(nestedBackgroundColor);
+
+  await userEvent.click(deepGroup.getByRole('checkbox', { name: 'Select Group' }));
+  await expect.element(deepGroup).toHaveAttribute('aria-selected', 'true');
+  expect(getComputedStyle(deepGroup.element()).backgroundColor).toBe(nestedBackgroundColor);
 });
 
 test('should group by multiple columns', async () => {
