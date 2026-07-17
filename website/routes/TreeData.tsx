@@ -40,9 +40,10 @@ interface Row {
   status: 'Active' | 'Planning' | 'Review';
   progress: number;
   budget: number;
+  children?: readonly Row[];
 }
 
-const rows: readonly Row[] = [
+const leafRows: readonly Row[] = [
   {
     id: 1,
     department: 'Engineering',
@@ -144,6 +145,42 @@ const rows: readonly Row[] = [
     budget: 89_000
   }
 ];
+
+let nextGroupId = -1;
+const rows = createTreeRows(leafRows);
+
+function createTreeRows(sourceRows: readonly Row[]): readonly Row[] {
+  return Object.entries(Object.groupBy(sourceRows, (row) => row.department)).map(
+    ([department, departmentRows]) => {
+      const rows = departmentRows!;
+      const children = Object.entries(Object.groupBy(rows, (row) => row.team)).map(
+        ([team, teamRows]) => createParentRow(teamRows!, `${team} portfolio`, teamRows!)
+      );
+      return createParentRow(rows, `${department} portfolio`, children);
+    }
+  );
+}
+
+function createParentRow(
+  sourceRows: readonly Row[],
+  project: string,
+  children: readonly Row[]
+): Row {
+  const id = nextGroupId;
+  nextGroupId -= 1;
+  return {
+    ...sourceRows[0],
+    id,
+    team: children === sourceRows ? sourceRows[0].team : 'All teams',
+    project,
+    owner: 'Multiple owners',
+    progress: Math.round(
+      sourceRows.reduce((total, row) => total + row.progress, 0) / sourceRows.length
+    ),
+    budget: sourceRows.reduce((total, row) => total + row.budget, 0),
+    children
+  };
+}
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -290,20 +327,24 @@ const columns: readonly Column<Row>[] = [
   }
 ];
 
-const groupBy = ['department', 'team'] as const;
 const defaultColumnOptions = { resizable: true } as const;
 
-const allGroupIds = new Set<string>();
-for (const row of rows) {
-  allGroupIds.add(row.department);
-  allGroupIds.add(`${row.department}/${row.team}`);
+const allGroupIds = new Set<number>();
+visitRows(rows);
+
+function visitRows(rows: readonly Row[]) {
+  for (const row of rows) {
+    if (row.children === undefined) continue;
+    allGroupIds.add(row.id);
+    visitRows(row.children);
+  }
 }
 
 function TreeData() {
   const direction = useDirection();
   const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(() => new Set());
-  const [expandedGroupIds, setExpandedGroupIds] = useState<ReadonlySet<unknown>>(
-    () => new Set(['Engineering', 'Engineering/Platform', 'Engineering/Web'])
+  const [expandedRowKeys, setExpandedRowKeys] = useState<ReadonlySet<number>>(
+    () => new Set([-1, -2, -3])
   );
 
   return (
@@ -318,10 +359,10 @@ function TreeData() {
         >
           Clear selection
         </button>
-        <button type="button" onClick={() => setExpandedGroupIds(new Set(allGroupIds))}>
+        <button type="button" onClick={() => setExpandedRowKeys(new Set(allGroupIds))}>
           Expand all
         </button>
-        <button type="button" onClick={() => setExpandedGroupIds(new Set())}>
+        <button type="button" onClick={() => setExpandedRowKeys(new Set())}>
           Collapse all
         </button>
       </div>
@@ -332,29 +373,15 @@ function TreeData() {
         rowKeyGetter={rowKeyGetter}
         selectedRows={selectedRows}
         onSelectedRowsChange={setSelectedRows}
-        rowGrouping={{
-          groupBy,
-          rowGrouper,
-          expandedGroupIds,
-          onExpandedGroupIdsChange: setExpandedGroupIds,
-          groupIdGetter
+        expandable={{
+          expandedRowKeys,
+          onExpandedRowsChange: setExpandedRowKeys
         }}
         defaultColumnOptions={defaultColumnOptions}
         direction={direction}
       />
     </div>
   );
-}
-
-function rowGrouper(rows: readonly Row[], columnKey: string) {
-  return Object.groupBy(rows, (row) => row[columnKey as keyof Row]) as Record<
-    string,
-    readonly Row[]
-  >;
-}
-
-function groupIdGetter(groupKey: string, parentId?: string) {
-  return parentId === undefined ? groupKey : `${parentId}/${groupKey}`;
 }
 
 function rowKeyGetter(row: Row) {

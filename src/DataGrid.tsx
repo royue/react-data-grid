@@ -119,11 +119,51 @@ export interface RowGroupingOptions<R> {
 }
 
 export interface ExpandableOptions<R, K extends Key> {
-  expandedRowKeys: ReadonlySet<K>;
-  onExpandedRowKeysChange: (expandedRowKeys: Set<NoInfer<K>>) => void;
+  /** Controlled expanded row keys */
+  expandedRowKeys?: Maybe<ReadonlySet<K>>;
+  /** Initial expanded row keys for uncontrolled usage */
+  defaultExpandedRowKeys?: Maybe<ReadonlySet<K>>;
+  /** Expand all rows on the initial render */
+  defaultExpandAllRows?: Maybe<boolean>;
+  /** Callback triggered after a row is expanded or collapsed */
+  onExpand?: Maybe<(expanded: boolean, row: NoInfer<R>) => void>;
+  /** Callback triggered after the expanded row keys change */
+  onExpandedRowsChange?: Maybe<(expandedRowKeys: Set<NoInfer<K>>) => void>;
+  /** @deprecated Use onExpandedRowsChange instead */
+  onExpandedRowKeysChange?: Maybe<(expandedRowKeys: Set<NoInfer<K>>) => void>;
   rowExpandable?: Maybe<(row: NoInfer<R>) => boolean>;
-  renderExpandedRow: (props: { row: NoInfer<R>; rowIdx: number }) => React.ReactNode;
+  /** Property containing nested child rows. Defaults to `children`. */
+  childrenColumnName?: Maybe<keyof R & string>;
+  /** Render a master/detail row */
+  expandedRowRender?: Maybe<(props: ExpandableRenderProps<NoInfer<R>>) => React.ReactNode>;
+  /** @deprecated Use expandedRowRender instead */
+  renderExpandedRow?: Maybe<(props: ExpandableRenderProps<NoInfer<R>>) => React.ReactNode>;
   expandedRowHeight?: Maybe<number | ((row: NoInfer<R>) => number)>;
+  /** Expand or collapse a row when one of its cells is clicked */
+  expandRowByClick?: Maybe<boolean>;
+  /** Render the expand/collapse control */
+  expandIcon?: Maybe<(props: ExpandIconProps<NoInfer<R>>) => React.ReactNode>;
+  /** Whether to render the expand control column. Defaults to true for the new API. */
+  showExpandColumn?: Maybe<boolean>;
+  /** Expand control column title */
+  columnTitle?: Maybe<React.ReactNode>;
+  /** Expand control column width. Defaults to 35 plus the tree indentation width. */
+  columnWidth?: Maybe<number | string>;
+  /** Indentation in pixels for each tree level. Defaults to 24. */
+  indentSize?: Maybe<number>;
+}
+
+export interface ExpandableRenderProps<R> {
+  row: R;
+  rowIdx: number;
+  depth: number;
+  isExpanded: boolean;
+}
+
+export interface ExpandIconProps<R> extends ExpandableRenderProps<R> {
+  expandable: boolean;
+  tabIndex: number;
+  onExpand: () => void;
 }
 
 type SharedDivProps = Pick<

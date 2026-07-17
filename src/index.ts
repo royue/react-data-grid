@@ -4,10 +4,13 @@ export {
   DataGrid,
   type DataGridHandle,
   type DataGridProps,
+  type ExpandIconProps,
   type ExpandableOptions,
+  type ExpandableRenderProps,
   type DefaultColumnOptions,
   type RowGroupingOptions
 } from './DataGrid';
+export { EXPAND_COLUMN_KEY } from './useExpandableRows';
 export { TreeDataGrid, type TreeDataGridProps } from './TreeDataGrid';
 export { DataGridDefaultRenderersContext } from './DataGridDefaultRenderersContext';
 export { default as Row } from './Row';

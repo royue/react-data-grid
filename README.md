@@ -431,7 +431,40 @@ function MyGrid() {
 
 ###### `expandable?: Maybe<ExpandableOptions<R, K>>`
 
-Master/detail row expansion configuration. `rowKeyGetter` is required because expanded rows are tracked by row key.
+Tree Data and Master Detail expansion configuration. `rowKeyGetter` is required because expanded rows are tracked by row key.
+
+The API follows the same model as antd's `Table.expandable`: rows containing a `children` array are rendered as a tree, while `expandedRowRender` renders a detail row. The expand control column is generated automatically. Both patterns support controlled and uncontrolled expansion.
+
+Tree Data example:
+
+```tsx
+interface Row {
+  id: number;
+  name: string;
+  children?: readonly Row[];
+}
+
+const rows: readonly Row[] = [
+  {
+    id: 1,
+    name: 'Parent',
+    children: [{ id: 2, name: 'Child' }]
+  }
+];
+
+function MyTreeGrid() {
+  return (
+    <DataGrid
+      columns={columns}
+      rows={rows}
+      rowKeyGetter={(row) => row.id}
+      expandable={{ defaultExpandAllRows: true }}
+    />
+  );
+}
+```
+
+Use `childrenColumnName` when nested rows are stored in another property.
 
 Expanded detail rows are rendered at the grid viewport width. When the grid scrolls horizontally, the detail row stays aligned with the visible table width instead of scrolling with the columns. This also prevents frozen columns from covering the expanded content.
 
@@ -444,17 +477,7 @@ interface Row {
   name: string;
 }
 
-const columns: readonly Column<Row>[] = [
-  {
-    key: 'expanded',
-    name: '',
-    renderCell({ row }) {
-      // Render your own expand/collapse control and update expandedRowKeys.
-      return null;
-    }
-  },
-  { key: 'name', name: 'Name' }
-];
+const columns: readonly Column<Row>[] = [{ key: 'name', name: 'Name' }];
 
 function rowKeyGetter(row: Row) {
   return row.id;
@@ -470,8 +493,11 @@ function MyGrid() {
       rowKeyGetter={rowKeyGetter}
       expandable={{
         expandedRowKeys,
-        onExpandedRowKeysChange: setExpandedRowKeys,
-        renderExpandedRow({ row }) {
+        onExpandedRowsChange: setExpandedRowKeys,
+        onExpand(expanded, row) {
+          console.log(expanded, row);
+        },
+        expandedRowRender({ row }) {
           return <Details row={row} />;
         },
         expandedRowHeight: 250
@@ -480,6 +506,27 @@ function MyGrid() {
   );
 }
 ```
+
+Expansion state options:
+
+- `expandedRowKeys` controls the expanded keys.
+- `defaultExpandedRowKeys` sets the initial keys for uncontrolled usage.
+- `defaultExpandAllRows` initially expands every expandable row.
+- `onExpand(expanded, row)` runs when one row is toggled.
+- `onExpandedRowsChange(keys)` runs with the complete next key set.
+
+Rendering options:
+
+- `expandedRowRender(props)` renders Master Detail content. Its props contain `row`, `rowIdx`, `depth`, and `isExpanded`.
+- `childrenColumnName` selects the nested rows property; the default is `children`.
+- `rowExpandable(row)` controls whether an individual row can expand.
+- `expandRowByClick` allows any cell in the row to toggle expansion.
+- `expandIcon(props)` customizes the expand control.
+- `showExpandColumn`, `columnTitle`, and `columnWidth` customize the generated column. By default, its width grows with the maximum tree depth so nested controls remain visible.
+- `indentSize` sets the Tree Data indentation in pixels.
+- `expandedRowHeight` sets the Master Detail row height.
+
+`renderExpandedRow` and `onExpandedRowKeysChange` remain available as deprecated compatibility aliases.
 
 ###### `sortColumns?: Maybe<readonly SortColumn[]>`
 

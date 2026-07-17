@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { faker } from '@faker-js/faker';
 import { createFileRoute } from '@tanstack/react-router';
 import { css } from 'ecij';
 
 import { DataGrid, type Column, type Direction } from '../../src';
-import { CellExpanderFormatter } from '../components';
 import { useDirection } from '../directionContext';
 
 export const Route = createFileRoute('/MasterDetail')({
@@ -102,57 +101,30 @@ function MasterDetail() {
   const direction = useDirection();
   const [expandedRowKeys, setExpandedRowKeys] = useState((): ReadonlySet<number> => new Set());
 
-  const columns = useMemo((): readonly Column<DepartmentRow>[] => {
-    return [
-      {
-        key: 'expanded',
-        name: '',
-        frozen: true,
-        minWidth: 30,
-        width: 30,
-        renderCell({ row, tabIndex, onRowChange }) {
-          return (
-            <CellExpanderFormatter
-              expanded={expandedRowKeys.has(row.id)}
-              tabIndex={tabIndex}
-              onCellExpand={() => {
-                onRowChange(row);
-                const newExpandedRowKeys = new Set(expandedRowKeys);
-                if (newExpandedRowKeys.has(row.id)) {
-                  newExpandedRowKeys.delete(row.id);
-                } else {
-                  newExpandedRowKeys.add(row.id);
-                }
-                setExpandedRowKeys(newExpandedRowKeys);
-              }}
-            />
-          );
-        }
-      },
-      { key: 'id', name: 'ID', frozen: true, width: 80 },
-      { key: 'department', name: 'Department', width: 220 },
-      { key: 'owner', name: 'Owner', width: 240 },
-      { key: 'region', name: 'Region', width: 220 },
-      { key: 'status', name: 'Status', width: 160 },
-      { key: 'budget', name: 'Budget', width: 160 },
-      { key: 'metric01', name: 'Metric 01', width: 140 },
-      { key: 'metric02', name: 'Metric 02', width: 140 },
-      { key: 'metric03', name: 'Metric 03', width: 140 },
-      { key: 'metric04', name: 'Metric 04', width: 140 },
-      { key: 'metric05', name: 'Metric 05', width: 140 },
-      { key: 'metric06', name: 'Metric 06', width: 140 },
-      { key: 'metric07', name: 'Metric 07', width: 140 },
-      { key: 'metric08', name: 'Metric 08', width: 140 },
-      { key: 'metric09', name: 'Metric 09', width: 140 },
-      { key: 'metric10', name: 'Metric 10', width: 140 },
-      { key: 'metric11', name: 'Metric 11', width: 140 },
-      { key: 'metric12', name: 'Metric 12', width: 140 },
-      { key: 'metric13', name: 'Metric 13', width: 140 },
-      { key: 'metric14', name: 'Metric 14', width: 140 },
-      { key: 'metric15', name: 'Metric 15', width: 140 },
-      { key: 'action', name: 'Action', frozenRight: true, width: 120 }
-    ];
-  }, [expandedRowKeys]);
+  const columns: readonly Column<DepartmentRow>[] = [
+    { key: 'id', name: 'ID', frozen: true, width: 80 },
+    { key: 'department', name: 'Department', width: 220 },
+    { key: 'owner', name: 'Owner', width: 240 },
+    { key: 'region', name: 'Region', width: 220 },
+    { key: 'status', name: 'Status', width: 160 },
+    { key: 'budget', name: 'Budget', width: 160 },
+    { key: 'metric01', name: 'Metric 01', width: 140 },
+    { key: 'metric02', name: 'Metric 02', width: 140 },
+    { key: 'metric03', name: 'Metric 03', width: 140 },
+    { key: 'metric04', name: 'Metric 04', width: 140 },
+    { key: 'metric05', name: 'Metric 05', width: 140 },
+    { key: 'metric06', name: 'Metric 06', width: 140 },
+    { key: 'metric07', name: 'Metric 07', width: 140 },
+    { key: 'metric08', name: 'Metric 08', width: 140 },
+    { key: 'metric09', name: 'Metric 09', width: 140 },
+    { key: 'metric10', name: 'Metric 10', width: 140 },
+    { key: 'metric11', name: 'Metric 11', width: 140 },
+    { key: 'metric12', name: 'Metric 12', width: 140 },
+    { key: 'metric13', name: 'Metric 13', width: 140 },
+    { key: 'metric14', name: 'Metric 14', width: 140 },
+    { key: 'metric15', name: 'Metric 15', width: 140 },
+    { key: 'action', name: 'Action', frozenRight: true, width: 120 }
+  ];
   const [rows, setRows] = useState(createDepartments);
 
   return (
@@ -166,8 +138,8 @@ function MasterDetail() {
       rowHeight={45}
       expandable={{
         expandedRowKeys,
-        onExpandedRowKeysChange: setExpandedRowKeys,
-        renderExpandedRow({ row }) {
+        onExpandedRowsChange: setExpandedRowKeys,
+        expandedRowRender({ row }) {
           return (
             <div
               className={css`

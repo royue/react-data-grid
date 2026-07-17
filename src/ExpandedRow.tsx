@@ -1,5 +1,6 @@
 import { useRovingTabIndex } from './hooks';
 import { classnames } from './utils';
+import type { ExpandableRenderProps } from './DataGrid';
 import { expandedRowCellClassname, expandedRowClassname } from './style/row';
 
 interface ExpandedRowProps<R> {
@@ -8,8 +9,10 @@ interface ExpandedRowProps<R> {
   gridRowStart: number;
   row: R;
   rowIdx: number;
+  sourceRowIdx: number;
+  depth: number;
   activeCellIdx: number | undefined;
-  renderExpandedRow: (props: { row: R; rowIdx: number }) => React.ReactNode;
+  renderExpandedRow: (props: ExpandableRenderProps<R>) => React.ReactNode;
   setActivePosition: (position: { idx: number; rowIdx: number }) => void;
 }
 
@@ -19,6 +22,8 @@ export function ExpandedRow<R>({
   gridRowStart,
   row,
   rowIdx,
+  sourceRowIdx,
+  depth,
   activeCellIdx,
   renderExpandedRow,
   setActivePosition
@@ -43,7 +48,7 @@ export function ExpandedRow<R>({
         onFocus={onFocus}
         onMouseDown={() => setActivePosition({ idx: 0, rowIdx })}
       >
-        {renderExpandedRow({ row, rowIdx })}
+        {renderExpandedRow({ row, rowIdx: sourceRowIdx, depth, isExpanded: true })}
       </div>
     </div>
   );
