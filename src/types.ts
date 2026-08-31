@@ -27,6 +27,10 @@ export interface Column<TRow, TSummaryRow = unknown> {
   readonly maxWidth?: Maybe<number>;
   /** Class name(s) for cells */
   readonly cellClass?: Maybe<string | ((row: TRow) => Maybe<string>)>;
+  /** Allow cell text to wrap */
+  readonly wrapText?: Maybe<boolean>;
+  /** Grow the row to fit the cell content */
+  readonly autoHeight?: Maybe<boolean>;
   /** Class name(s) for the header cell */
   readonly headerCellClass?: Maybe<string>;
   /** Class name(s) for summary cells */
@@ -93,6 +97,8 @@ export interface CalculatedColumn<TRow, TSummaryRow = unknown> extends Column<TR
   readonly draggable: boolean;
   readonly frozen: boolean;
   readonly frozenRight: boolean;
+  readonly wrapText: boolean;
+  readonly autoHeight: boolean;
   readonly renderCell: (props: RenderCellProps<TRow, TSummaryRow>) => ReactNode;
   readonly renderHeaderCell: (props: RenderHeaderCellProps<TRow, TSummaryRow>) => ReactNode;
 }

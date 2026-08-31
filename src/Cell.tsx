@@ -1,9 +1,15 @@
-import { memo, type MouseEvent } from 'react';
+import { memo, useCallback, useRef, type MouseEvent } from 'react';
 import { css } from 'ecij';
 
 import { useRovingTabIndex } from './hooks';
 import { createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils';
 import type { CellMouseEventHandler, CellRendererProps } from './types';
+import { useRowHeightContext } from './RowHeightContext';
+import {
+  cellContentClassname,
+  cellContentMeasuringClassname,
+  cellWrapClassname
+} from './style/cell';
 
 const cellDraggedOver = css`
   @layer rdg.Cell {
@@ -37,12 +43,15 @@ function Cell<R, SR>({
   ...props
 }: CellRendererProps<R, SR>) {
   const { tabIndex, childTabIndex, onFocus } = useRovingTabIndex(isCellActive);
+  const rowHeightContext = useRowHeightContext();
+  const unobserveRef = useRef<(() => void) | undefined>(undefined);
 
   const { cellClass } = column;
   className = getCellClassname(
     column,
     isDraggedOver && cellDraggedOverClassname,
     typeof cellClass === 'function' ? cellClass(row) : cellClass,
+    column.wrapText && cellWrapClassname,
     className
   );
   const isEditable = isCellEditableUtil(column, row);
@@ -94,6 +103,24 @@ function Cell<R, SR>({
     onRowChange(column, rowIdx, newRow);
   }
 
+  const setContentRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      unobserveRef.current?.();
+      unobserveRef.current =
+        element === null ? undefined : rowHeightContext?.observe(rowIdx, column.key, element);
+    },
+    [column.key, rowHeightContext, rowIdx]
+  );
+
+  const content = column.renderCell({
+    column,
+    row,
+    rowIdx,
+    isCellEditable: isEditable,
+    tabIndex: childTabIndex,
+    onRowChange: handleRowChange
+  });
+
   return (
     <div
       role="gridcell"
@@ -115,14 +142,16 @@ function Cell<R, SR>({
       onFocus={onFocus}
       {...props}
     >
-      {column.renderCell({
-        column,
-        row,
-        rowIdx,
-        isCellEditable: isEditable,
-        tabIndex: childTabIndex,
-        onRowChange: handleRowChange
-      })}
+      {column.autoHeight ? (
+        <div
+          ref={setContentRef}
+          className={`${cellContentClassname} ${cellContentMeasuringClassname}`}
+        >
+          {content}
+        </div>
+      ) : (
+        content
+      )}
     </div>
   );
 }

@@ -98,7 +98,9 @@ describe('Custom cell renderer', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith([{ id: 2 }], {
       column: {
         ...column,
+        autoHeight: false,
         frozen: false,
+        frozenRight: false,
         idx: 0,
         level: 0,
         maxWidth: undefined,
@@ -108,6 +110,7 @@ describe('Custom cell renderer', () => {
         sortable: false,
         draggable: false,
         width: 'auto',
+        wrapText: false,
         renderHeaderCell: defaultRenderHeaderCell
       },
       indexes: [0]

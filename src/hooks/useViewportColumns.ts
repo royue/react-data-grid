@@ -12,6 +12,7 @@ import type {
 
 interface ViewportColumnsArgs<R, SR> {
   columns: readonly CalculatedColumn<R, SR>[];
+  autoHeightColumns: readonly CalculatedColumn<R, SR>[];
   colSpanColumns: readonly CalculatedColumn<R, SR>[];
   rows: readonly R[];
   topSummaryRows: Maybe<readonly SR[]>;
@@ -26,6 +27,7 @@ interface ViewportColumnsArgs<R, SR> {
 
 export function useViewportColumns<R, SR>({
   columns,
+  autoHeightColumns,
   colSpanColumns,
   rows,
   topSummaryRows,
@@ -130,24 +132,100 @@ export function useViewportColumns<R, SR>({
     [startIdx, colOverscanEndIdx, columns, lastFrozenColumnIndex, firstRightFrozenColumnIndex]
   );
 
+  const viewportColumns = useMemo((): readonly CalculatedColumn<R, SR>[] => {
+    return iterateOverViewportColumns(-1).toArray();
+  }, [iterateOverViewportColumns]);
+
+  const autoHeightViewportColumns = useMemo(() => {
+    if (autoHeightColumns.length === 0) return viewportColumns;
+
+    const columnsToRender = new Set(viewportColumns);
+    for (const column of autoHeightColumns) {
+      columnsToRender.add(column);
+    }
+    return columnsToRender
+      .values()
+      .toArray()
+      .sort((a, b) => a.idx - b.idx);
+  }, [autoHeightColumns, viewportColumns]);
+
   const iterateOverViewportColumnsForRow = useCallback<IterateOverViewportColumnsForRow<R, SR>>(
     function* (activeColumnIdx = -1, args): Generator<ViewportColumnWithColSpan<R, SR>> {
-      const iterator = iterateOverViewportColumns(activeColumnIdx);
+      if (args?.type !== 'ROW') {
+        let coveredUntilColumnIdx = -1;
+        for (const column of iterateOverViewportColumns(activeColumnIdx)) {
+          if (column.idx < coveredUntilColumnIdx) continue;
 
-      for (const column of iterator) {
-        let colSpan =
-          args && getColSpan(column, lastFrozenColumnIndex, firstRightFrozenColumnIndex, args);
+          const colSpan =
+            args && getColSpan(column, lastFrozenColumnIndex, firstRightFrozenColumnIndex, args);
+          yield [column, column.idx === activeColumnIdx, colSpan, undefined, undefined];
+
+          if (colSpan !== undefined && colSpan > 1) {
+            coveredUntilColumnIdx = column.idx + colSpan;
+          }
+        }
+        return;
+      }
+
+      const columnsToRender = new Set(autoHeightViewportColumns);
+      if (activeColumnIdx >= 0 && activeColumnIdx < columns.length) {
+        columnsToRender.add(columns[activeColumnIdx]);
+      }
+
+      // A forced auto-height column may be covered by an offscreen colSpan root.
+      // Include that root so the covered cell is not rendered or measured independently.
+      let spannedUntilColumnIdx = -1;
+      for (const column of colSpanColumns) {
+        if (column.idx < spannedUntilColumnIdx) continue;
+
+        const colSpan = getColSpan(
+          column,
+          lastFrozenColumnIndex,
+          firstRightFrozenColumnIndex,
+          args
+        );
+        if (colSpan === undefined || colSpan <= 1) continue;
+
+        spannedUntilColumnIdx = column.idx + colSpan;
+        for (const renderedColumn of columnsToRender) {
+          if (renderedColumn.idx >= column.idx && renderedColumn.idx < spannedUntilColumnIdx) {
+            columnsToRender.add(column);
+            break;
+          }
+        }
+      }
+
+      const rowColumns = columnsToRender
+        .values()
+        .toArray()
+        .sort((a, b) => a.idx - b.idx);
+      let coveredUntilColumnIdx = -1;
+
+      for (const column of rowColumns) {
+        if (column.idx < coveredUntilColumnIdx) continue;
+
+        const colSpan = getColSpan(
+          column,
+          lastFrozenColumnIndex,
+          firstRightFrozenColumnIndex,
+          args
+        );
 
         yield [column, column.idx === activeColumnIdx, colSpan, undefined, undefined];
 
-        // skip columns covered by colSpan
-        while (colSpan !== undefined && colSpan > 1) {
-          iterator.next();
-          colSpan--;
+        if (colSpan !== undefined && colSpan > 1) {
+          coveredUntilColumnIdx = column.idx + colSpan;
         }
       }
     },
-    [iterateOverViewportColumns, lastFrozenColumnIndex, firstRightFrozenColumnIndex]
+    [
+      autoHeightViewportColumns,
+      colSpanColumns,
+      columns,
+      iterateOverViewportColumns,
+      lastFrozenColumnIndex,
+      firstRightFrozenColumnIndex
+    ]
   );
 
   const iterateOverViewportColumnsForRowOutsideOfViewport = useCallback<
@@ -168,12 +246,9 @@ export function useViewportColumns<R, SR>({
     [columns, lastFrozenColumnIndex, firstRightFrozenColumnIndex]
   );
 
-  const viewportColumns = useMemo((): readonly CalculatedColumn<R, SR>[] => {
-    return iterateOverViewportColumns(-1).toArray();
-  }, [iterateOverViewportColumns]);
-
   return {
     viewportColumns,
+    viewportColumnsToMeasure: autoHeightViewportColumns,
     iterateOverViewportColumnsForRow,
     iterateOverViewportColumnsForRowOutsideOfViewport
   } as const;

@@ -58,12 +58,15 @@ export function useCalculatedColumns<R, SR>({
   const defaultRenderCell = defaultColumnOptions?.renderCell ?? renderValue;
   const defaultRenderHeaderCell: RenderHeaderCell<R, SR> =
     defaultColumnOptions?.renderHeaderCell ?? (renderHeaderCell as RenderHeaderCell<R, SR>);
+  const defaultWrapText = defaultColumnOptions?.wrapText ?? false;
+  const defaultAutoHeight = defaultColumnOptions?.autoHeight ?? false;
   const defaultSortable = defaultColumnOptions?.sortable ?? false;
   const defaultResizable = defaultColumnOptions?.resizable ?? false;
   const defaultDraggable = defaultColumnOptions?.draggable ?? false;
 
   const {
     columns,
+    autoHeightColumns,
     colSpanColumns,
     rowSpanColumns,
     lastFrozenColumnIndex,
@@ -71,6 +74,7 @@ export function useCalculatedColumns<R, SR>({
     headerRowsCount
   } = useMemo((): {
     readonly columns: readonly CalculatedColumn<R, SR>[];
+    readonly autoHeightColumns: readonly CalculatedColumn<R, SR>[];
     readonly colSpanColumns: readonly CalculatedColumn<R, SR>[];
     readonly rowSpanColumns: readonly CalculatedColumn<R, SR>[];
     readonly lastFrozenColumnIndex: number;
@@ -114,6 +118,8 @@ export function useCalculatedColumns<R, SR>({
           level: 0,
           frozen,
           frozenRight,
+          wrapText: rawColumn.wrapText ?? defaultWrapText,
+          autoHeight: rawColumn.rowSpan == null && (rawColumn.autoHeight ?? defaultAutoHeight),
           width: rawColumn.width ?? defaultWidth,
           minWidth: rawColumn.minWidth ?? defaultMinWidth,
           maxWidth: rawColumn.maxWidth ?? defaultMaxWidth,
@@ -184,6 +190,7 @@ export function useCalculatedColumns<R, SR>({
 
     return {
       columns,
+      autoHeightColumns: columns.filter((column) => column.autoHeight),
       colSpanColumns,
       rowSpanColumns,
       lastFrozenColumnIndex,
@@ -197,6 +204,8 @@ export function useCalculatedColumns<R, SR>({
     defaultMaxWidth,
     defaultRenderCell,
     defaultRenderHeaderCell,
+    defaultWrapText,
+    defaultAutoHeight,
     defaultResizable,
     defaultSortable,
     defaultDraggable
@@ -328,6 +337,7 @@ export function useCalculatedColumns<R, SR>({
 
   return {
     columns,
+    autoHeightColumns,
     colSpanColumns,
     rowSpanColumns,
     colOverscanStartIdx,

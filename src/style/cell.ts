@@ -30,6 +30,32 @@ export const cell = css`
 
 export const cellClassname = `rdg-cell ${cell}`;
 
+export const cellWrap = css`
+  @layer rdg.Cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+`;
+
+export const cellWrapClassname = `rdg-cell-wrap ${cellWrap}`;
+
+export const cellContent = css`
+  @layer rdg.Cell {
+    min-inline-size: 0;
+  }
+`;
+
+export const cellContentClassname = `rdg-cell-content ${cellContent}`;
+
+export const cellContentMeasuring = css`
+  @layer rdg.Cell {
+    display: flow-root;
+    block-size: max-content;
+  }
+`;
+
+export const cellContentMeasuringClassname = `rdg-cell-content-measuring ${cellContentMeasuring}`;
+
 export const cellFrozen = css`
   @layer rdg.Cell {
     position: sticky;

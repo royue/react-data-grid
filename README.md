@@ -215,6 +215,21 @@ The DataGrid accepts standard [`className`](#classname-string--undefined) and [`
 
 Control row heights using the [`rowHeight`](#rowheight-maybenumber--row-r--number), [`headerRowHeight`](#headerrowheight-maybenumber), and [`summaryRowHeight`](#summaryrowheight-maybenumber) props. The `rowHeight` prop supports both fixed heights and dynamic heights per row.
 
+Columns can opt into content-driven row heights with [`wrapText`](#wraptext-maybeboolean) and [`autoHeight`](#autoheight-maybeboolean). In this mode, `rowHeight` is the minimum and initial estimated height. Visible rows are measured and the virtualized row positions are updated automatically.
+
+```tsx
+const columns: Column<Row>[] = [
+  {
+    key: 'description',
+    name: 'Description',
+    wrapText: true,
+    autoHeight: true
+  }
+];
+
+<DataGrid columns={columns} rows={rows} rowHeight={35} />;
+```
+
 #### Row Classes
 
 Apply custom CSS classes to rows using the [`rowClass`](#rowclass-mayberow-r-rowidx-number--maybestring) prop, and to header rows using the [`headerRowClass`](#headerrowclass-maybestring) prop.
@@ -1437,6 +1452,20 @@ const columns: Column<Row>[] = [
 }
 ```
 
+##### `wrapText?: Maybe<boolean>`
+
+**Default:** `false`
+
+Allow cell text to wrap onto multiple lines. Use with [`autoHeight`](#autoheight-maybeboolean) to grow rows whose content wraps.
+
+##### `autoHeight?: Maybe<boolean>`
+
+**Default:** `false`
+
+Grow a row beyond its configured [`rowHeight`](#rowheight-maybenumber--row-r--number) when this column's rendered content needs more vertical space. If multiple columns enable `autoHeight`, the tallest measured cell determines the row height. Rows shrink back to their minimum height when their measured content becomes shorter, such as after widening a column.
+
+`autoHeight` is ignored on columns that use `rowSpan`. Low-level custom `renderers.renderCell` implementations must render the exported `Cell` component for automatic measurement; custom column `renderCell` functions work without additional configuration.
+
 ##### `headerCellClass?: Maybe<string>`
 
 Class name(s) for the header cell.
@@ -2235,6 +2264,8 @@ type DefaultColumnOptions<TRow, TSummaryRow> = Pick<
   | 'width'
   | 'minWidth'
   | 'maxWidth'
+  | 'wrapText'
+  | 'autoHeight'
   | 'resizable'
   | 'sortable'
   | 'draggable'

@@ -74,6 +74,7 @@ import EditCell from './EditCell';
 import GroupedColumnHeaderRow from './GroupedColumnHeaderRow';
 import HeaderRow from './HeaderRow';
 import { defaultRenderRow } from './Row';
+import { RowHeightContext } from './RowHeightContext';
 import { default as defaultRenderSortStatus } from './sortStatus';
 import { cellDragHandleClassname, cellDragHandleFrozenClassname } from './style/cell';
 import {
@@ -95,6 +96,8 @@ export type DefaultColumnOptions<R, SR> = Pick<
   | 'width'
   | 'minWidth'
   | 'maxWidth'
+  | 'wrapText'
+  | 'autoHeight'
   | 'resizable'
   | 'sortable'
   | 'draggable'
@@ -369,7 +372,6 @@ interface RowSpanRange {
   readonly colIdx: number;
   readonly colSpan: number;
   readonly rowSpan: number;
-  readonly rowSpanHeight: number;
 }
 
 function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplProps<R, SR, K>) {
@@ -485,6 +487,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
 
   const {
     columns,
+    autoHeightColumns,
     colSpanColumns,
     rowSpanColumns,
     lastFrozenColumnIndex,
@@ -527,6 +530,13 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
   const ariaRowCount = rawAriaRowCount ?? headerRowsCount + rows.length + summaryRowsCount;
   const maxScrollLeft = max(totalColumnWidth - gridWidth, 0);
   const firstRightFrozenColumnIndex = columns.length - frozenRightColumnCount;
+  const autoHeightColumnWidths = useMemo(
+    () =>
+      new Map(
+        autoHeightColumns.map((column) => [column.key, templateColumns[column.idx]] as const)
+      ),
+    [autoHeightColumns, templateColumns]
+  );
   const frozenShadowStyles: React.CSSProperties = {
     gridColumnStart: lastFrozenColumnIndex + 2,
     insetInlineStart: totalFrozenColumnWidth,
@@ -599,15 +609,19 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     rowOverscanStartIdx,
     rowOverscanEndIdx,
     totalRowHeight,
-    gridTemplateRows,
     getRowTop,
     getRowHeight,
-    findRowIdx
+    findRowIdx,
+    getViewportRowsLayout,
+    rowHeightContextValue
   } = useViewportRows({
     rows,
     rowHeight,
+    rowKeyGetter,
+    autoHeightColumnWidths,
     clientHeight,
     scrollTop,
+    gridRef,
     enableVirtualization
   });
 
@@ -632,14 +646,6 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
       });
     }
 
-    function getRowSpanHeight(rowIdx: number, rowSpan: number) {
-      let rowSpanHeight = 0;
-      for (let index = rowIdx; index < rowIdx + rowSpan; index++) {
-        rowSpanHeight += getRowHeight(index);
-      }
-      return rowSpanHeight;
-    }
-
     for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
       const row = rows[rowIdx];
 
@@ -658,8 +664,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
           rowIdx,
           colIdx: column.idx,
           colSpan,
-          rowSpan,
-          rowSpanHeight: getRowSpanHeight(rowIdx, rowSpan)
+          rowSpan
         };
 
         rowSpanRangesByCell.set(getCellKey(rowIdx, column.idx), range);
@@ -676,14 +681,15 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     }
 
     return { rowSpanRangesByCell, rowSpanRangesByRow };
-  }, [firstRightFrozenColumnIndex, getRowHeight, lastFrozenColumnIndex, rows, rowSpanColumns]);
+  }, [firstRightFrozenColumnIndex, lastFrozenColumnIndex, rows, rowSpanColumns]);
 
   const {
-    viewportColumns,
+    viewportColumnsToMeasure,
     iterateOverViewportColumnsForRow,
     iterateOverViewportColumnsForRowOutsideOfViewport
   } = useViewportColumns({
     columns,
+    autoHeightColumns,
     colSpanColumns,
     colOverscanStartIdx,
     colOverscanEndIdx,
@@ -713,6 +719,10 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     });
   }
 
+  function getRowSpanHeight({ rowIdx, rowSpan }: RowSpanRange) {
+    return getRowTop(rowIdx + rowSpan) - getRowTop(rowIdx);
+  }
+
   function getRowSpanAwareColumnIterator(
     rowIdx: number,
     iterator: IterateOverViewportColumnsForRow<R, SR>
@@ -722,14 +732,20 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
         if (getRowSpanRangeCoveringCell(rowIdx, column.idx) !== undefined) continue;
 
         const range = getRowSpanRange(rowIdx, column.idx);
-        yield [column, isCellActive, colSpan, range?.rowSpan, range?.rowSpanHeight];
+        yield [
+          column,
+          isCellActive,
+          colSpan,
+          range?.rowSpan,
+          range === undefined ? undefined : getRowSpanHeight(range)
+        ];
       }
     };
   }
 
   const { gridTemplateColumns, handleColumnResize } = useColumnWidths(
     columns,
-    viewportColumns,
+    viewportColumnsToMeasure,
     templateColumns,
     gridRef,
     gridWidth,
@@ -765,13 +781,24 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
       scrollToCell({ idx, rowIdx }) {
         const scrollToIdx =
           idx != null && idx > lastFrozenColumnIndex && idx < columns.length ? idx : undefined;
-        const scrollToRowIdx =
-          rowIdx != null && validatePosition({ idx: 0, rowIdx }).isPositionInViewport
-            ? rowIdx + headerAndTopSummaryRowsCount
-            : undefined;
+        if (rowIdx != null && validatePosition({ idx: 0, rowIdx }).isPositionInViewport) {
+          const grid = gridRef.current!;
+          const stickyTop = headerRowsHeight + topSummaryRowsCount * summaryRowHeight;
+          const stickyBottom = bottomSummaryRowsCount * summaryRowHeight;
+          const rowTop = stickyTop + getRowTop(rowIdx);
+          const rowBottom = rowTop + getRowHeight(rowIdx);
+          const viewportTop = grid.scrollTop + stickyTop;
+          const viewportBottom = grid.scrollTop + grid.clientHeight - stickyBottom;
 
-        if (scrollToIdx != null || scrollToRowIdx != null) {
-          setScrollToPosition({ idx: scrollToIdx, rowIdx: scrollToRowIdx });
+          if (rowTop < viewportTop) {
+            grid.scrollTop = getRowTop(rowIdx);
+          } else if (rowBottom > viewportBottom) {
+            grid.scrollTop = rowBottom + stickyBottom - grid.clientHeight;
+          }
+        }
+
+        if (scrollToIdx != null) {
+          setScrollToPosition({ idx: scrollToIdx });
         }
       },
       setActivePosition: setPosition
@@ -1160,17 +1187,32 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
         return { idx: maxColIdx, rowIdx: ctrlKey ? maxRowIdx : rowIdx };
       case 'PageUp': {
         if (rowIdx === minRowIdx) return activePosition;
-        const nextRowY = getRowTop(rowIdx) + getRowHeight(rowIdx) - clientHeight;
+        const nextRowY =
+          getNavigationRowTop(rowIdx) + getNavigationRowHeight(rowIdx) - clientHeight;
         return { idx, rowIdx: nextRowY > 0 ? findRowIdx(nextRowY) : 0 };
       }
       case 'PageDown': {
         if (rowIdx >= rows.length) return activePosition;
-        const nextRowY = getRowTop(rowIdx) + clientHeight;
+        const nextRowY = getNavigationRowTop(rowIdx) + clientHeight;
         return { idx, rowIdx: nextRowY < totalRowHeight ? findRowIdx(nextRowY) : rows.length - 1 };
       }
       default:
         return activePosition;
     }
+  }
+
+  function getNavigationRowTop(rowIdx: number) {
+    if (rowIdx >= 0) return getRowTop(rowIdx);
+    if (rowIdx >= -topSummaryRowsCount) return rowIdx * summaryRowHeight;
+
+    return (
+      -topSummaryRowsCount * summaryRowHeight + (rowIdx + topSummaryRowsCount) * headerRowHeight
+    );
+  }
+
+  function getNavigationRowHeight(rowIdx: number) {
+    if (rowIdx >= 0) return getRowHeight(rowIdx);
+    return rowIdx >= -topSummaryRowsCount ? summaryRowHeight : headerRowHeight;
   }
 
   function navigate(event: KeyboardEvent<HTMLDivElement>) {
@@ -1259,7 +1301,8 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     const isLastColumn = column.idx + colSpan - 1 === maxColIdx;
     const dragHandleStyle: React.CSSProperties = {
       ...style,
-      gridRowStart: headerAndTopSummaryRowsCount + rowIdx + 1,
+      gridRowStart:
+        headerAndTopSummaryRowsCount + viewportRowsLayout.gridRowStartByRowIdx.get(rowIdx)!,
       marginInlineEnd: isLastColumn ? undefined : marginEnd,
       marginBlockEnd: isLastRow ? undefined : marginEnd,
       insetInlineStart: insetInlineStart
@@ -1329,7 +1372,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
         column={column}
         colSpan={colSpan}
         rowSpan={rowSpanRange?.rowSpan}
-        rowSpanHeight={rowSpanRange?.rowSpanHeight}
+        rowSpanHeight={rowSpanRange === undefined ? undefined : getRowSpanHeight(rowSpanRange)}
         row={row}
         rowIdx={rowIdx}
         onRowChange={onRowChange}
@@ -1340,18 +1383,16 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     );
   }
 
-  function* iterateOverViewportRowIdx() {
+  function getViewportRowIndexes() {
     const activeRowIdx = activePosition.rowIdx;
     const renderedRowIdxs = new Set<number>();
 
-    function* renderRowIdx(rowIdx: number) {
-      if (renderedRowIdxs.has(rowIdx)) return;
+    function addRowIdx(rowIdx: number) {
       renderedRowIdxs.add(rowIdx);
-      yield rowIdx;
     }
 
     if (activePositionIsInViewport && activeRowIdx < rowOverscanStartIdx) {
-      yield* renderRowIdx(activeRowIdx);
+      addRowIdx(activeRowIdx);
     }
 
     if (rowSpanRangesByRow.size > 0) {
@@ -1367,69 +1408,73 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
         }
       }
 
-      for (const rowIdx of rowSpanStartRows
-        .values()
-        .toArray()
-        .sort((a, b) => a - b)) {
-        yield* renderRowIdx(rowIdx);
+      for (const rowIdx of rowSpanStartRows) {
+        addRowIdx(rowIdx);
       }
     }
 
     for (let rowIdx = rowOverscanStartIdx; rowIdx <= rowOverscanEndIdx; rowIdx++) {
-      yield* renderRowIdx(rowIdx);
+      addRowIdx(rowIdx);
     }
     if (activePositionIsInViewport && activeRowIdx > rowOverscanEndIdx) {
-      yield* renderRowIdx(activeRowIdx);
+      addRowIdx(activeRowIdx);
     }
+
+    return renderedRowIdxs
+      .values()
+      .toArray()
+      .sort((a, b) => a - b);
   }
+
+  const viewportRowIndexes = getViewportRowIndexes();
+  const viewportRowsLayout = getViewportRowsLayout(viewportRowIndexes);
 
   function getViewportRows() {
     const { idx: activeIdx, rowIdx: activeRowIdx } = activePosition;
 
-    return iterateOverViewportRowIdx()
-      .map((rowIdx) => {
-        const isActiveRow = rowIdx === activeRowIdx;
+    return viewportRowIndexes.map((rowIdx) => {
+      const isActiveRow = rowIdx === activeRowIdx;
 
-        // if the row is outside the viewport then only render its active column, if any
-        const iterateOverColumns =
-          isActiveRow && (rowIdx < rowOverscanStartIdx || rowIdx > rowOverscanEndIdx)
-            ? iterateOverViewportColumnsForRowOutsideOfViewport
-            : iterateOverViewportColumnsForRow;
-        const iterateOverRowColumns = getRowSpanAwareColumnIterator(rowIdx, iterateOverColumns);
+      // if the row is outside the viewport then only render its active column, if any
+      const iterateOverColumns =
+        isActiveRow && (rowIdx < rowOverscanStartIdx || rowIdx > rowOverscanEndIdx)
+          ? iterateOverViewportColumnsForRowOutsideOfViewport
+          : iterateOverViewportColumnsForRow;
+      const iterateOverRowColumns = getRowSpanAwareColumnIterator(rowIdx, iterateOverColumns);
 
-        const row = rows[rowIdx];
-        const gridRowStart = headerAndTopSummaryRowsCount + rowIdx + 1;
-        let key: K | number = rowIdx;
-        let isRowSelected = false;
-        if (typeof rowKeyGetter === 'function') {
-          key = rowKeyGetter(row);
-          isRowSelected = selectedRows?.has(key) ?? false;
-        }
+      const row = rows[rowIdx];
+      const gridRowStart =
+        headerAndTopSummaryRowsCount + viewportRowsLayout.gridRowStartByRowIdx.get(rowIdx)!;
+      let key: K | number = rowIdx;
+      let isRowSelected = false;
+      if (typeof rowKeyGetter === 'function') {
+        key = rowKeyGetter(row);
+        isRowSelected = selectedRows?.has(key) ?? false;
+      }
 
-        return renderRow(key, {
-          // aria-rowindex is 1 based
-          'aria-rowindex': headerAndTopSummaryRowsCount + rowIdx + 1,
-          'aria-selected': isSelectable ? isRowSelected : undefined,
-          rowIdx,
-          row,
-          iterateOverViewportColumnsForRow: iterateOverRowColumns,
-          isRowSelectionDisabled: isRowSelectionDisabled?.(row) ?? false,
-          isRowSelected,
-          onCellMouseDown: onCellMouseDownLatest,
-          onCellClick: onCellClickLatest,
-          onCellDoubleClick: onCellDoubleClickLatest,
-          onCellContextMenu: onCellContextMenuLatest,
-          rowClass,
-          gridRowStart,
-          activeCellIdx: isActiveRow ? activeIdx : undefined,
-          draggedOverCellIdx: getDraggedOverCellIdx(rowIdx),
-          onRowChange: handleFormatterRowChangeLatest,
-          setActivePosition: setPositionLatest,
-          activeCellEditor: getCellEditor(rowIdx),
-          isTreeGrid
-        });
-      })
-      .toArray();
+      return renderRow(key, {
+        // aria-rowindex is 1 based
+        'aria-rowindex': headerAndTopSummaryRowsCount + rowIdx + 1,
+        'aria-selected': isSelectable ? isRowSelected : undefined,
+        rowIdx,
+        row,
+        iterateOverViewportColumnsForRow: iterateOverRowColumns,
+        isRowSelectionDisabled: isRowSelectionDisabled?.(row) ?? false,
+        isRowSelected,
+        onCellMouseDown: onCellMouseDownLatest,
+        onCellClick: onCellClickLatest,
+        onCellDoubleClick: onCellDoubleClickLatest,
+        onCellContextMenu: onCellContextMenuLatest,
+        rowClass,
+        gridRowStart,
+        activeCellIdx: isActiveRow ? activeIdx : undefined,
+        draggedOverCellIdx: getDraggedOverCellIdx(rowIdx),
+        onRowChange: handleFormatterRowChangeLatest,
+        setActivePosition: setPositionLatest,
+        activeCellEditor: getCellEditor(rowIdx),
+        isTreeGrid
+      });
+    });
   }
 
   // Keep the state and prop in sync
@@ -1442,7 +1487,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     templateRows += ` repeat(${topSummaryRowsCount}, ${summaryRowHeight}px)`;
   }
   if (rows.length > 0) {
-    templateRows += gridTemplateRows;
+    templateRows += ` ${viewportRowsLayout.gridTemplateRows}`;
   }
   if (bottomSummaryRowsCount > 0) {
     templateRows += ` repeat(${bottomSummaryRowsCount}, ${summaryRowHeight}px)`;
@@ -1543,11 +1588,14 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
                 />
               );
             })}
-            <RowSelectionChangeContext.Provider value={selectRowLatest}>
-              {getViewportRows()}
-            </RowSelectionChangeContext.Provider>
+            <RowHeightContext.Provider value={rowHeightContextValue}>
+              <RowSelectionChangeContext.Provider value={selectRowLatest}>
+                {getViewportRows()}
+              </RowSelectionChangeContext.Provider>
+            </RowHeightContext.Provider>
             {bottomSummaryRows?.map((row, rowIdx) => {
-              const gridRowStart = headerAndTopSummaryRowsCount + rows.length + rowIdx + 1;
+              const gridRowStart =
+                headerAndTopSummaryRowsCount + viewportRowsLayout.rowTrackCount + rowIdx + 1;
               const summaryRowIdx = rows.length + rowIdx;
               const isSummaryRowActive = activePosition.rowIdx === summaryRowIdx;
               const top =
@@ -1597,8 +1645,13 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
               className={frozenColumnShadowClassname}
               style={{
                 ...frozenShadowStyles,
-                gridRowStart: headerAndTopSummaryRowsCount + rowOverscanStartIdx + 1,
-                gridRowEnd: headerAndTopSummaryRowsCount + rowOverscanEndIdx + 2
+                gridRowStart:
+                  headerAndTopSummaryRowsCount +
+                  viewportRowsLayout.gridRowStartByRowIdx.get(rowOverscanStartIdx)!,
+                gridRowEnd:
+                  headerAndTopSummaryRowsCount +
+                  viewportRowsLayout.gridRowStartByRowIdx.get(rowOverscanEndIdx)! +
+                  1
               }}
             />
           )}
@@ -1608,8 +1661,12 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
               className={frozenColumnShadowTopClassname}
               style={{
                 ...frozenShadowStyles,
-                gridRowStart: headerAndTopSummaryRowsCount + rows.length + 1,
-                gridRowEnd: headerAndTopSummaryRowsCount + rows.length + 1 + bottomSummaryRowsCount,
+                gridRowStart: headerAndTopSummaryRowsCount + viewportRowsLayout.rowTrackCount + 1,
+                gridRowEnd:
+                  headerAndTopSummaryRowsCount +
+                  viewportRowsLayout.rowTrackCount +
+                  1 +
+                  bottomSummaryRowsCount,
                 insetBlockStart:
                   clientHeight > totalRowHeight
                     ? gridHeight - summaryRowHeight * bottomSummaryRowsCount
@@ -1638,8 +1695,13 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
               className={frozenRightColumnShadowClassname}
               style={{
                 ...frozenRightShadowStyles,
-                gridRowStart: headerAndTopSummaryRowsCount + rowOverscanStartIdx + 1,
-                gridRowEnd: headerAndTopSummaryRowsCount + rowOverscanEndIdx + 2
+                gridRowStart:
+                  headerAndTopSummaryRowsCount +
+                  viewportRowsLayout.gridRowStartByRowIdx.get(rowOverscanStartIdx)!,
+                gridRowEnd:
+                  headerAndTopSummaryRowsCount +
+                  viewportRowsLayout.gridRowStartByRowIdx.get(rowOverscanEndIdx)! +
+                  1
               }}
             />
           )}
@@ -1649,8 +1711,12 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
               className={frozenRightColumnShadowTopClassname}
               style={{
                 ...frozenRightShadowStyles,
-                gridRowStart: headerAndTopSummaryRowsCount + rows.length + 1,
-                gridRowEnd: headerAndTopSummaryRowsCount + rows.length + 1 + bottomSummaryRowsCount,
+                gridRowStart: headerAndTopSummaryRowsCount + viewportRowsLayout.rowTrackCount + 1,
+                gridRowEnd:
+                  headerAndTopSummaryRowsCount +
+                  viewportRowsLayout.rowTrackCount +
+                  1 +
+                  bottomSummaryRowsCount,
                 insetBlockStart:
                   clientHeight > totalRowHeight
                     ? gridHeight - summaryRowHeight * bottomSummaryRowsCount
@@ -1665,7 +1731,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
       {getDragHandle()}
 
       {/* render empty cells that span only 1 column so we can safely measure column widths, regardless of colSpan */}
-      {renderMeasuringCells(viewportColumns)}
+      {renderMeasuringCells(viewportColumnsToMeasure)}
 
       {scrollToPositionElement}
     </div>
