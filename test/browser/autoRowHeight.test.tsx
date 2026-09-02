@@ -335,6 +335,27 @@ test('invalidates offscreen row measurements when an auto-height column width ch
   await expect.poll(() => grid.scrollHeight).toBe(3535);
 });
 
+test('last row remains above a horizontal scrollbar', async () => {
+  await setup({
+    columns: [
+      { key: 'id', name: 'ID', width: 300 },
+      { key: 'description', name: 'Description', width: 300 }
+    ],
+    rows: Array.from({ length: 20 }, (_, id) => ({ id, description: String(id) })),
+    rowHeight: 35,
+    style: { width: 320, height: 200 }
+  });
+
+  const grid = page.getGrid().element();
+  scrollGrid({ top: grid.scrollHeight });
+  await expect
+    .poll(() => {
+      const lastRow = page.getRow().last().element();
+      return lastRow.getBoundingClientRect().bottom;
+    })
+    .toBeLessThanOrEqual(grid.getBoundingClientRect().bottom - 1);
+});
+
 function getVisibleRowAnchor() {
   const grid = page.getGrid().element();
   const viewportTop = grid.getBoundingClientRect().top + 35;

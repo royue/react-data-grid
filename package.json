@@ -1,6 +1,6 @@
 {
   "name": "@jiuge/react-data-grid",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "description": "Feature-rich and customizable data grid React component",
   "keywords": [
     "data grid",
@@ -34,8 +34,8 @@
   "scripts": {
     "start": "vite serve --clearScreen false",
     "preview": "vite preview",
-    "build:website": "vite build",
-    "build": "tsdown",
+    "build:website": "vite build && node scripts/copy-package-docs.mjs dist",
+    "build": "tsdown && node scripts/copy-package-docs.mjs lib",
     "test": "vitest run --project browser --project node",
     "test:watch": "vitest watch --project browser --project node",
     "test:ci": "vitest run",

@@ -11,6 +11,7 @@ import {
   useColumnWidths,
   useGridDimensions,
   useLatestFunc,
+  useLayoutEffect,
   useScrollState,
   useScrollToPosition,
   useViewportColumns,
@@ -88,6 +89,8 @@ import {
 import SummaryRow from './SummaryRow';
 import { useExpandableRows } from './useExpandableRows';
 import { useRowGrouping } from './useRowGrouping';
+
+const overlayScrollbarGutter = 16;
 
 export type DefaultColumnOptions<R, SR> = Pick<
   Column<R, SR>,
@@ -524,6 +527,30 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
   const maxColIdx = columns.length - 1;
   const headerRowsHeight = headerRowsCount * headerRowHeight;
   const summaryRowsHeight = summaryRowsCount * summaryRowHeight;
+  const hasHorizontalOverflow = totalColumnWidth > gridWidth;
+  const [hasOverlayHorizontalScrollbar, setHasOverlayHorizontalScrollbar] = useState(false);
+
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+    if (grid === null || !hasHorizontalOverflow) {
+      setHasOverlayHorizontalScrollbar((value) => (value ? false : value));
+      return;
+    }
+
+    const computedStyle = getComputedStyle(grid);
+    const borderBlockSize =
+      Number.parseFloat(computedStyle.borderBlockStartWidth) +
+      Number.parseFloat(computedStyle.borderBlockEndWidth);
+    const horizontalScrollbarSize = grid.offsetHeight - grid.clientHeight - borderBlockSize;
+    setHasOverlayHorizontalScrollbar((value) => {
+      const nextValue = horizontalScrollbarSize <= 0;
+      return value === nextValue ? value : nextValue;
+    });
+  }, [gridHeight, gridRef, gridWidth, hasHorizontalOverflow, totalColumnWidth]);
+
+  // Overlay scrollbars do not reduce clientHeight, so reserve a small track for them.
+  const scrollbarGutter =
+    hasHorizontalOverflow && hasOverlayHorizontalScrollbar ? overlayScrollbarGutter : 0;
   const clientHeight = gridHeight - headerRowsHeight - summaryRowsHeight;
   const isSelectable = selectedRows != null && onSelectedRowsChange != null;
   const { leftKey, rightKey } = getLeftRightKey(direction);
@@ -788,12 +815,13 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
           const rowTop = stickyTop + getRowTop(rowIdx);
           const rowBottom = rowTop + getRowHeight(rowIdx);
           const viewportTop = grid.scrollTop + stickyTop;
-          const viewportBottom = grid.scrollTop + grid.clientHeight - stickyBottom;
+          const viewportBottom =
+            grid.scrollTop + grid.clientHeight - stickyBottom - scrollbarGutter;
 
           if (rowTop < viewportTop) {
             grid.scrollTop = getRowTop(rowIdx);
           } else if (rowBottom > viewportBottom) {
-            grid.scrollTop = rowBottom + stickyBottom - grid.clientHeight;
+            grid.scrollTop = rowBottom + stickyBottom + scrollbarGutter - grid.clientHeight;
           }
         }
 
@@ -1492,6 +1520,9 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
   if (bottomSummaryRowsCount > 0) {
     templateRows += ` repeat(${bottomSummaryRowsCount}, ${summaryRowHeight}px)`;
   }
+  if (scrollbarGutter > 0) {
+    templateRows += ` ${scrollbarGutter}px`;
+  }
 
   return (
     <div
@@ -1512,7 +1543,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
         // set scrollPadding to correctly scroll to non-sticky cells/rows
         scrollPaddingInlineStart: totalFrozenColumnWidth,
         scrollPaddingBlockStart: headerRowsHeight + topSummaryRowsCount * summaryRowHeight,
-        scrollPaddingBlockEnd: bottomSummaryRowsCount * summaryRowHeight,
+        scrollPaddingBlockEnd: bottomSummaryRowsCount * summaryRowHeight + scrollbarGutter,
         gridTemplateColumns,
         gridTemplateRows: templateRows,
         '--rdg-header-row-height': `${headerRowHeight}px`,
@@ -1600,7 +1631,9 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
               const isSummaryRowActive = activePosition.rowIdx === summaryRowIdx;
               const top =
                 clientHeight > totalRowHeight
-                  ? gridHeight - summaryRowHeight * (bottomSummaryRowsCount - rowIdx)
+                  ? gridHeight -
+                    scrollbarGutter -
+                    summaryRowHeight * (bottomSummaryRowsCount - rowIdx)
                   : undefined;
               const bottom =
                 top === undefined
@@ -1669,7 +1702,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
                   bottomSummaryRowsCount,
                 insetBlockStart:
                   clientHeight > totalRowHeight
-                    ? gridHeight - summaryRowHeight * bottomSummaryRowsCount
+                    ? gridHeight - scrollbarGutter - summaryRowHeight * bottomSummaryRowsCount
                     : undefined,
                 insetBlockEnd: clientHeight > totalRowHeight ? undefined : 0
               }}
@@ -1719,7 +1752,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
                   bottomSummaryRowsCount,
                 insetBlockStart:
                   clientHeight > totalRowHeight
-                    ? gridHeight - summaryRowHeight * bottomSummaryRowsCount
+                    ? gridHeight - scrollbarGutter - summaryRowHeight * bottomSummaryRowsCount
                     : undefined,
                 insetBlockEnd: clientHeight > totalRowHeight ? undefined : 0
               }}
