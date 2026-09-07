@@ -1,6 +1,7 @@
-import { page, userEvent } from 'vitest/browser';
+import { commands, page, userEvent } from 'vitest/browser';
 
 import type { Column } from '../../src';
+import { DataGrid, renderTextEditor } from '../../src';
 import { scrollGrid, setup } from './utils';
 
 interface Row {
@@ -221,4 +222,133 @@ test('supports expanding a row by clicking a cell', async () => {
 
   await userEvent.click(page.getCell({ name: 'one' }));
   await expect.element(page.getByText('detail 1')).toBeInTheDocument();
+});
+
+test('fills parents and nested siblings in one immutable update', async () => {
+  interface TreeRow extends Row {
+    children?: readonly TreeRow[];
+  }
+
+  const grandchild = Object.freeze({ id: 3, name: 'grandchild' });
+  const child = Object.freeze({
+    id: 2,
+    name: 'child',
+    children: Object.freeze([grandchild])
+  });
+  const sibling = Object.freeze({ id: 4, name: 'sibling' });
+  const parent = Object.freeze({
+    id: 1,
+    name: 'parent',
+    children: Object.freeze([child, sibling])
+  });
+  const treeRows: readonly TreeRow[] = Object.freeze([
+    { id: 0, name: 'source' },
+    parent,
+    { id: 5, name: 'untouched' }
+  ]);
+  const onRowsChange = vi.fn();
+
+  await setup({
+    columns: [{ key: 'name', name: 'Name', renderEditCell: renderTextEditor }],
+    rows: treeRows,
+    rowKeyGetter,
+    onRowsChange,
+    onFill({ sourceRow, targetRow }) {
+      return { ...targetRow, name: sourceRow.name };
+    },
+    expandable: { defaultExpandAllRows: true }
+  });
+
+  await commands.dragFill('source', 'sibling');
+
+  expect(onRowsChange).toHaveBeenCalledOnce();
+  const [updatedRows, data] = onRowsChange.mock.calls[0];
+  expect(updatedRows).toStrictEqual([
+    treeRows[0],
+    {
+      id: 1,
+      name: 'source',
+      children: [
+        { id: 2, name: 'source', children: [{ id: 3, name: 'source' }] },
+        { id: 4, name: 'source' }
+      ]
+    },
+    treeRows[2]
+  ]);
+  expect(updatedRows[0]).toBe(treeRows[0]);
+  expect(updatedRows[2]).toBe(treeRows[2]);
+  expect(data.indexes).toStrictEqual([1]);
+  expect(treeRows[1]).toBe(parent);
+  expect(parent.children).toStrictEqual([child, sibling]);
+});
+
+test.each([1, 2])('stops row spans before the detail row of row %s', async (expandedKey) => {
+  const dataRows = [...rows, { id: 3, name: 'three' }, { id: 4, name: 'four' }];
+  const rowSpan = vi.fn(({ row }: { row: Row }) => (row.name.startsWith('one') ? 4 : undefined));
+  const props = {
+    columns: [{ key: 'name', name: 'Name', rowSpan }],
+    rows: dataRows,
+    rowKeyGetter,
+    expandable: {
+      expandedRowKeys: new Set([expandedKey]),
+      expandedRowRender: ({ row }: { row: Row }) => <span>detail {row.id}</span>
+    }
+  };
+  const { rerender } = await setup(props);
+
+  await expect.element(page.getByText(`detail ${expandedKey}`)).toBeInTheDocument();
+  expect(page.getCell({ name: 'one' }).element().getAttribute('aria-rowspan')).toBe(
+    expandedKey === 1 ? null : '2'
+  );
+  await expect.element(page.getCell({ name: 'three' })).toBeInTheDocument();
+  expect(rowSpan.mock.calls.every(([{ row }]) => dataRows.includes(row))).toBe(true);
+
+  await rerender(
+    <DataGrid {...props} expandable={{ ...props.expandable, expandedRowKeys: new Set<number>() }} />
+  );
+  await expect.element(page.getByText(`detail ${expandedKey}`)).not.toBeInTheDocument();
+  await expect.element(page.getCell({ name: 'one' })).toHaveAttribute('aria-rowspan', '4');
+  await expect.element(page.getCell({ name: 'three' })).not.toBeInTheDocument();
+});
+
+test('does not revisit hidden descendants when another branch is toggled', async () => {
+  interface TreeRow extends Row {
+    children?: readonly TreeRow[];
+  }
+  const readHiddenChildren = vi.fn(() => [{ id: 3, name: 'hidden grandchild' }]);
+  const treeRows: readonly TreeRow[] = [
+    {
+      id: 1,
+      name: 'hidden parent',
+      children: [
+        {
+          id: 2,
+          name: 'hidden child',
+          get children() {
+            return readHiddenChildren();
+          }
+        }
+      ]
+    },
+    { id: 4, name: 'visible parent', children: [{ id: 5, name: 'visible child' }] }
+  ];
+  const props = {
+    columns: [{ key: 'name', name: 'Name' }],
+    rows: treeRows,
+    rowKeyGetter,
+    expandable: {}
+  };
+  const { rerender } = await setup(props);
+  expect(readHiddenChildren).toHaveBeenCalled();
+  await expect.element(page.getHeaderCell().first()).toHaveStyle({ width: '83px' });
+  readHiddenChildren.mockClear();
+
+  await userEvent.click(page.getByRole('button', { name: 'Expand row' }).nth(1));
+  await expect.element(page.getCell({ name: 'visible child' })).toBeInTheDocument();
+  await userEvent.click(page.getByRole('button', { name: 'Collapse row' }));
+  await expect.element(page.getCell({ name: 'visible child' })).not.toBeInTheDocument();
+  expect(readHiddenChildren).not.toHaveBeenCalled();
+
+  await rerender(<DataGrid {...props} rows={[treeRows[1]]} />);
+  await expect.element(page.getHeaderCell().first()).toHaveStyle({ width: '59px' });
 });

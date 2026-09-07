@@ -1,11 +1,37 @@
 import { page, userEvent } from 'vitest/browser';
 
 import type { Column } from '../../../src';
-import { getCellsAtRowIndex, safeTab, setup, validateCellPosition } from '../utils';
+import { getCellsAtRowIndex, safeTab, scrollGrid, setup, validateCellPosition } from '../utils';
 
 const headerCells = page.getHeaderCell();
 
 describe('colSpan', () => {
+  it.each([false, true])(
+    'only evaluates viewport columns when no auto-height column is offscreen (autoHeight: %s)',
+    async (autoHeight) => {
+      const evaluatedColumns = new Set<number>();
+      const columns: Column<number>[] = Array.from({ length: 1000 }, (_, index) => ({
+        key: String(index),
+        name: String(index),
+        width: 80,
+        autoHeight: autoHeight && index === 0,
+        colSpan(args) {
+          if (args.type === 'ROW') evaluatedColumns.add(index);
+          return undefined;
+        }
+      }));
+      await setup({ columns, rows: [0], style: { width: 240, height: 150 } });
+      await expect.element(getCellsAtRowIndex(0)).toHaveLength(4);
+      expect(evaluatedColumns).toStrictEqual(new Set([0, 1, 2, 3]));
+
+      evaluatedColumns.clear();
+      scrollGrid({ left: 800 });
+      await expect.element(page.getHeaderCell({ name: '10' })).toBeInTheDocument();
+      expect(evaluatedColumns.has(999)).toBe(false);
+      expect(evaluatedColumns.size).toBeLessThan(20);
+    }
+  );
+
   function setupColSpan(colCount = 15) {
     type Row = number;
     const columns: Column<Row, Row>[] = [];

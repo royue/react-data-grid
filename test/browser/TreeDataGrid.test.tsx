@@ -160,6 +160,38 @@ test('should group by single column', async () => {
   await testRowCount(4);
 });
 
+test('preserves default row keys and row indexes when preceding groups collapse with auto height', async () => {
+  const props = {
+    columns: [
+      { key: 'country', name: 'Country' },
+      { key: 'id', name: 'ID', autoHeight: true }
+    ],
+    rows: initialRows,
+    rowGrouping: {
+      groupBy: ['country'],
+      rowGrouper,
+      expandedGroupIds: new Set(['USA', 'Canada']),
+      onExpandedGroupIdsChange() {}
+    }
+  };
+  const { rerender } = await page.render(<DataGrid {...props} />);
+  const lastCell = page.getCell({ name: '4' });
+  await expect.element(lastCell).toBeInTheDocument();
+  const lastCellElement = lastCell.element();
+  await expect.element(getRowWithCell(lastCell)).toHaveAttribute('aria-rowindex', '7');
+
+  await rerender(
+    <DataGrid
+      {...props}
+      rowGrouping={{ ...props.rowGrouping, expandedGroupIds: new Set(['Canada']) }}
+    />
+  );
+
+  await expect.element(page.getCell({ name: '1' })).not.toBeInTheDocument();
+  await expect.element(getRowWithCell(lastCell)).toHaveAttribute('aria-rowindex', '7');
+  expect(lastCell.element()).toBe(lastCellElement);
+});
+
 test('should render column separators in group rows', async () => {
   await setup(['country']);
   const groupCells = getRowWithCell(page.getCell({ name: 'USA' })).getCell();

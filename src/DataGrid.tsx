@@ -636,6 +636,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     rowOverscanStartIdx,
     rowOverscanEndIdx,
     totalRowHeight,
+    rowHeightSnapshot,
     getRowTop,
     getRowHeight,
     findRowIdx,
@@ -750,25 +751,53 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
     return getRowTop(rowIdx + rowSpan) - getRowTop(rowIdx);
   }
 
-  function getRowSpanAwareColumnIterator(
-    rowIdx: number,
-    iterator: IterateOverViewportColumnsForRow<R, SR>
-  ): IterateOverViewportColumnsForRow<R, SR> {
-    return function* (activeIdx, args) {
-      for (const [column, isCellActive, colSpan] of iterator(activeIdx, args)) {
-        if (getRowSpanRangeCoveringCell(rowIdx, column.idx) !== undefined) continue;
-
-        const range = getRowSpanRange(rowIdx, column.idx);
-        yield [
-          column,
-          isCellActive,
-          colSpan,
-          range?.rowSpan,
-          range === undefined ? undefined : getRowSpanHeight(range)
-        ];
+  const spanStartRows = useMemo(
+    () => new Set(rowSpanRangesByCell.values().map((range) => range.rowIdx)),
+    [rowSpanRangesByCell]
+  );
+  const { rowSpanIterators, getRowSpanAwareColumnIterator } = useMemo(() => {
+    const rowSpanIterators = new Map<
+      number,
+      {
+        readonly source: IterateOverViewportColumnsForRow<R, SR>;
+        readonly iterate: IterateOverViewportColumnsForRow<R, SR>;
       }
-    };
-  }
+    >();
+
+    function getRowSpanAwareColumnIterator(
+      rowIdx: number,
+      iterator: IterateOverViewportColumnsForRow<R, SR>
+    ): IterateOverViewportColumnsForRow<R, SR> {
+      const coveredRanges = rowSpanRangesByRow.get(rowIdx);
+      if (coveredRanges === undefined && !spanStartRows.has(rowIdx)) return iterator;
+
+      const previous = rowSpanIterators.get(rowIdx);
+      if (previous?.source === iterator) return previous.iterate;
+
+      const spanIterator: IterateOverViewportColumnsForRow<R, SR> = function* (activeIdx, args) {
+        for (const [column, isCellActive, colSpan] of iterator(activeIdx, args)) {
+          if (
+            coveredRanges?.some(
+              (range) => column.idx >= range.colIdx && column.idx < range.colIdx + range.colSpan
+            )
+          )
+            continue;
+
+          const range = rowSpanRangesByCell.get(`${rowIdx}:${column.idx}`);
+          const height =
+            range === undefined
+              ? undefined
+              : rowHeightSnapshot.index.getTop(rowIdx + range.rowSpan) -
+                rowHeightSnapshot.index.getTop(rowIdx);
+          yield [column, isCellActive, colSpan, range?.rowSpan, height];
+        }
+      };
+      rowSpanIterators.set(rowIdx, { source: iterator, iterate: spanIterator });
+      return spanIterator;
+    }
+
+    return { rowSpanIterators, getRowSpanAwareColumnIterator };
+  }, [rowHeightSnapshot, rowSpanRangesByCell, rowSpanRangesByRow, spanStartRows]);
 
   const { gridTemplateColumns, handleColumnResize } = useColumnWidths(
     columns,
@@ -1456,6 +1485,16 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
 
   const viewportRowIndexes = getViewportRowIndexes();
   const viewportRowsLayout = getViewportRowsLayout(viewportRowIndexes);
+
+  useLayoutEffect(() => {
+    if (rowSpanIterators.size === 0) return;
+    const renderedRows = new Set(viewportRowIndexes);
+    for (const rowIdx of rowSpanIterators.keys()) {
+      if (!renderedRows.has(rowIdx)) {
+        rowSpanIterators.delete(rowIdx);
+      }
+    }
+  });
 
   function getViewportRows() {
     const { idx: activeIdx, rowIdx: activeRowIdx } = activePosition;

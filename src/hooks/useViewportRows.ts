@@ -79,7 +79,7 @@ export function useViewportRows<R>({
     layout.rows !== rows ||
     layout.rowHeight !== rowHeight ||
     layout.rowKeyGetter !== rowKeyGetter ||
-    layout.autoHeightColumnWidths !== autoHeightColumnWidths
+    !areColumnWidthsEqual(layout.autoHeightColumnWidths, autoHeightColumnWidths)
   ) {
     layout = createRowHeightLayout(layout, rows, rowHeight, rowKeyGetter, autoHeightColumnWidths);
     setLayoutState(layout);
@@ -273,6 +273,11 @@ export function useViewportRows<R>({
   }
 
   const totalRowHeight = layout.index.getTotalHeight();
+  // The index is updated in place by measurement, so consumers also need its version.
+  const rowHeightSnapshot = useMemo(
+    () => ({ index: layout.index, version: layoutVersion }),
+    [layout.index, layoutVersion]
+  );
   let rowOverscanStartIdx = 0;
   let rowOverscanEndIdx = rows.length - 1;
 
@@ -288,6 +293,7 @@ export function useViewportRows<R>({
     rowOverscanStartIdx,
     rowOverscanEndIdx,
     totalRowHeight,
+    rowHeightSnapshot,
     getRowTop,
     getRowHeight,
     findRowIdx,
@@ -385,6 +391,19 @@ function createRowHeightLayout<R>(
         : new RowHeightIndex(indexedHeights),
     previousLayout: previousLayoutSnapshot
   };
+}
+
+function areColumnWidthsEqual(
+  previousWidths: ReadonlyMap<string, string>,
+  nextWidths: ReadonlyMap<string, string>
+): boolean {
+  if (previousWidths === nextWidths) return true;
+  if (previousWidths.size !== nextWidths.size) return false;
+
+  for (const [key, width] of previousWidths) {
+    if (nextWidths.get(key) !== width) return false;
+  }
+  return true;
 }
 
 function parseCssPixelValue(value: string): number {

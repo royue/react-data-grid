@@ -151,7 +151,7 @@ export function useViewportColumns<R, SR>({
 
   const iterateOverViewportColumnsForRow = useCallback<IterateOverViewportColumnsForRow<R, SR>>(
     function* (activeColumnIdx = -1, args): Generator<ViewportColumnWithColSpan<R, SR>> {
-      if (args?.type !== 'ROW') {
+      if (args?.type !== 'ROW' || autoHeightViewportColumns.length === viewportColumns.length) {
         let coveredUntilColumnIdx = -1;
         for (const column of iterateOverViewportColumns(activeColumnIdx)) {
           if (column.idx < coveredUntilColumnIdx) continue;
@@ -175,7 +175,13 @@ export function useViewportColumns<R, SR>({
       // A forced auto-height column may be covered by an offscreen colSpan root.
       // Include that root so the covered cell is not rendered or measured independently.
       let spannedUntilColumnIdx = -1;
+      const lastRenderedColumnIdx = Math.max(
+        autoHeightViewportColumns.at(-1)?.idx ?? -1,
+        activeColumnIdx
+      );
+      const colSpans = new Map<CalculatedColumn<R, SR>, number | undefined>();
       for (const column of colSpanColumns) {
+        if (column.idx > lastRenderedColumnIdx) break;
         if (column.idx < spannedUntilColumnIdx) continue;
 
         const colSpan = getColSpan(
@@ -184,6 +190,7 @@ export function useViewportColumns<R, SR>({
           firstRightFrozenColumnIndex,
           args
         );
+        colSpans.set(column, colSpan);
         if (colSpan === undefined || colSpan <= 1) continue;
 
         spannedUntilColumnIdx = column.idx + colSpan;
@@ -204,12 +211,9 @@ export function useViewportColumns<R, SR>({
       for (const column of rowColumns) {
         if (column.idx < coveredUntilColumnIdx) continue;
 
-        const colSpan = getColSpan(
-          column,
-          lastFrozenColumnIndex,
-          firstRightFrozenColumnIndex,
-          args
-        );
+        const colSpan = colSpans.has(column)
+          ? colSpans.get(column)
+          : getColSpan(column, lastFrozenColumnIndex, firstRightFrozenColumnIndex, args);
 
         yield [column, column.idx === activeColumnIdx, colSpan, undefined, undefined];
 
@@ -224,7 +228,8 @@ export function useViewportColumns<R, SR>({
       columns,
       iterateOverViewportColumns,
       lastFrozenColumnIndex,
-      firstRightFrozenColumnIndex
+      firstRightFrozenColumnIndex,
+      viewportColumns
     ]
   );
 

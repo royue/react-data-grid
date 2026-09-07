@@ -14,6 +14,7 @@ The DataGrid component is designed to handle large datasets efficiently while of
 - [Links](#links)
 - [Installation](#installation)
 - [Getting started](#getting-started)
+- [Cell Spanning](#cell-spanning)
 - [Styling and Customization](#styling-and-customization)
 - [API Reference](#api-reference)
 
@@ -32,6 +33,7 @@ The DataGrid component is designed to handle large datasets efficiently while of
   - Click on a sortable column header to toggle between its ascending/descending sort order
   - Ctrl+Click / Meta+Click to sort an additional column
 - [Column spanning](https://comcast.github.io/react-data-grid/#/ColumnSpanning)
+- [Row spanning and combined cell spanning](#cell-spanning)
 - [Column grouping](https://comcast.github.io/react-data-grid/#/ColumnGrouping)
 - [Row selection](https://comcast.github.io/react-data-grid/#/CommonFeatures)
 - [Row grouping](https://comcast.github.io/react-data-grid/#/RowGrouping)
@@ -118,6 +120,88 @@ function App() {
   return <DataGrid columns={columns} rows={rows} />;
 }
 ```
+
+## Cell Spanning
+
+Configure `rowSpan` and `colSpan` on a column to merge adjacent cells. Each callback returns a count that **includes the starting cell**. For example, `rowSpan: () => 2` covers the starting row and the next row; `colSpan: () => 2` covers the starting column and the next column in the grid's column order.
+
+| Option                | Direction                       | Callback arguments                                                         |
+| --------------------- | ------------------------------- | -------------------------------------------------------------------------- |
+| `colSpan`             | Across columns                  | `HEADER`, `ROW`, or `SUMMARY`; check `args.type` before reading `args.row` |
+| `rowSpan`             | Down rows                       | `ROW` only; header and summary rows are not supported                      |
+| Both on the same cell | A rectangle of rows and columns | The starting cell supplies both counts and the displayed content           |
+
+Cells covered by a merge are not rendered separately. Keep their rows and columns in the input arrays: spanning changes the presentation, not the underlying data. Set the span on the starting cell; return `undefined`, `null`, or `1` for ordinary cells. Returning `0` does not hide a cell. Only integers greater than `1` create a span.
+
+### Complete Example
+
+This example demonstrates all three modes: `Fruit` spans two rows, `Stock checks` spans three columns, and `Awaiting delivery` spans a two-row, two-column rectangle.
+
+```tsx
+import '@jiuge/react-data-grid/lib/styles.css';
+
+import { DataGrid, type Column } from '@jiuge/react-data-grid';
+
+interface Row {
+  id: number;
+  category: string;
+  product: string;
+  quantity: number;
+  categoryRowSpan?: number;
+  categoryColSpan?: number;
+}
+
+const columns: readonly Column<Row>[] = [
+  {
+    key: 'category',
+    name: 'Category',
+    width: 180,
+    rowSpan({ row }) {
+      return row.categoryRowSpan;
+    },
+    colSpan(args) {
+      return args.type === 'ROW' ? args.row.categoryColSpan : undefined;
+    }
+  },
+  { key: 'product', name: 'Product', width: 180 },
+  { key: 'quantity', name: 'Quantity', width: 100 }
+];
+
+const rows: readonly Row[] = [
+  { id: 1, category: 'Fruit', product: 'Apple', quantity: 10, categoryRowSpan: 2 },
+  { id: 2, category: 'Fruit', product: 'Pear', quantity: 20 },
+  { id: 3, category: 'Stock checks', product: '', quantity: 0, categoryColSpan: 3 },
+  {
+    id: 4,
+    category: 'Awaiting delivery',
+    product: '',
+    quantity: 0,
+    categoryRowSpan: 2,
+    categoryColSpan: 2
+  },
+  { id: 5, category: '', product: '', quantity: 0 }
+];
+
+function rowKeyGetter(row: Row) {
+  return row.id;
+}
+
+function App() {
+  return <DataGrid columns={columns} rows={rows} rowKeyGetter={rowKeyGetter} rowHeight={35} />;
+}
+```
+
+For vertical merging only, omit `colSpan` from the category column. For horizontal merging only, omit `rowSpan`. To merge a header or summary cell, handle `args.type === 'HEADER'` or `args.type === 'SUMMARY'` in `colSpan` and return the desired column count for that cell.
+
+### Spanning Rules
+
+- `colSpan` must stay within one column region: left-frozen, regular, or right-frozen. A span crossing a region boundary is ignored. Keep the count within the available columns in that region.
+- `rowSpan` is limited to the remaining rows. With `expandable.expandedRowRender`, it also stops before the next expanded detail row; internal detail rows are never passed to the business `rowSpan` callback.
+- A vertically merged cell's height is the sum of its covered row heights. `autoHeight` is ignored on a column that defines `rowSpan`; other columns can still determine those rows' automatic heights.
+- Spans follow the current row and column order. Recalculate span metadata after sorting, filtering, or reordering, and avoid overlapping merge definitions.
+- Keep callbacks pure and inexpensive. Row spans are indexed across the data, and column-span callbacks can be evaluated for cells outside the viewport to find a merge that reaches visible cells. Precompute grouping or span counts when preparing the rows instead of scanning the full dataset inside each callback.
+
+See the [`colSpan` API](#colspan-maybeargs-colspanargstrow-tsummaryrow--maybenumber), [`rowSpan` API](#rowspan-maybeargs-rowspanargstrow--maybenumber), [`ColSpanArgs`](#colspanargstrow-tsummaryrow), and [`RowSpanArgs`](#rowspanargstrow) for their types.
 
 ## Styling and Customization
 
@@ -1500,7 +1584,7 @@ Control whether cells can be edited with `renderEditCell`.
 
 ##### `colSpan?: Maybe<(args: ColSpanArgs<TRow, TSummaryRow>) => Maybe<number>>`
 
-Function to determine how many columns this cell should span. Returns the number of columns to span, or `undefined` for no spanning. Spans cannot cross frozen, regular, and right-frozen column boundaries. See the [`ColSpanArgs`](#colspanargstrow-tsummaryrow) type in the Types section below.
+Function to determine how many columns this cell should span, including the starting column. Return an integer greater than `1` to merge cells, or `undefined`, `null`, or `1` for no spanning. The callback supports header, data, and summary cells; check `args.type` before accessing `args.row`. Spans cannot cross frozen, regular, and right-frozen column boundaries. See [Cell Spanning](#cell-spanning) for a complete example and [`ColSpanArgs`](#colspanargstrow-tsummaryrow) for the argument types.
 
 **Example:**
 
@@ -1513,17 +1597,21 @@ const columns: readonly Column<Row>[] = [
     name: 'Title',
     colSpan(args) {
       if (args.type === 'ROW' && args.row.isFullWidth) {
-        return 5; // Span 5 columns for full-width rows
+        return 3; // Merge title, description, and status
       }
       return undefined;
     }
-  }
+  },
+  { key: 'description', name: 'Description' },
+  { key: 'status', name: 'Status' }
 ];
 ```
 
 ##### `rowSpan?: Maybe<(args: RowSpanArgs<TRow>) => Maybe<number>>`
 
-Function to determine how many rows this cell should span. Returns the number of rows to span, or `undefined` for no spanning. When combined with `colSpan`, the horizontal span cannot cross frozen, regular, and right-frozen column boundaries. See the [`RowSpanArgs`](#rowspanargstrow) type in the Types section below.
+Function to determine how many rows this cell should span, including the starting row. Return an integer greater than `1` to merge cells, or `undefined`, `null`, or `1` for no spanning. The count is limited to the remaining rows. This callback only handles `ROW` cells, not headers or summary rows. It can be combined with `colSpan` on the same starting cell to form a rectangular merge. See [Cell Spanning](#cell-spanning) for a complete example and [`RowSpanArgs`](#rowspanargstrow) for the argument type.
+
+With `expandable.expandedRowRender`, spans stop before an expanded detail row. The callback is only called for data rows, never for internal detail rows.
 
 **Example:**
 

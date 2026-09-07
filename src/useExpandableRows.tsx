@@ -14,8 +14,10 @@ import type {
   Column,
   ColumnGroup,
   ColumnOrColumnGroup,
+  Maybe,
   PositionChangeArgs,
   RenderRowProps,
+  RowSpanArgs,
   RowsChangeData
 } from './types';
 import { renderExpandIcon } from './cellRenderers';
@@ -139,30 +141,33 @@ export function useExpandableRows<R, SR = unknown, K extends Key = Key>({
   );
   const expandedRowKeys = controlledExpandedRowKeys ?? uncontrolledExpandedRowKeys;
 
-  const [rows, rowMeta, isExpandedRow, hasTreeRows, maxTreeDepth] = useMemo((): [
+  const maxTreeDepth = useMemo(() => {
+    let maxDepth = 0;
+    visitRows(rawRows, 0);
+    return maxDepth;
+
+    function visitRows(siblingRows: readonly R[], depth: number) {
+      for (const row of siblingRows) {
+        maxDepth = Math.max(maxDepth, depth);
+        visitRows(getChildren(row), depth + 1);
+      }
+    }
+  }, [getChildren, rawRows]);
+
+  const [rows, rowMeta, isExpandedRow, hasTreeRows] = useMemo((): [
     readonly (R | ExpandedRowData<R>)[],
     ReadonlyMap<R, RowMeta>,
     (row: R | ExpandedRowData<R>) => row is ExpandedRowData<R>,
-    boolean,
-    number
+    boolean
   ] => {
     const expandedRows = new Set<ExpandedRowData<R>>();
     const rowMeta = new Map<R, RowMeta>();
     const rows: (R | ExpandedRowData<R>)[] = [];
     let flatRowIdx = 0;
     let hasTreeRows = false;
-    let maxTreeDepth = 0;
 
     appendRows(rawRows, 0, []);
-    visitCollapsedRows(rawRows, 0);
-    return [rows, rowMeta, isExpandedRow, hasTreeRows, maxTreeDepth];
-
-    function visitCollapsedRows(siblingRows: readonly R[], depth: number) {
-      for (const row of siblingRows) {
-        maxTreeDepth = Math.max(maxTreeDepth, depth);
-        visitCollapsedRows(getChildren(row), depth + 1);
-      }
-    }
+    return [rows, rowMeta, isExpandedRow, hasTreeRows];
 
     function appendRows(siblingRows: readonly R[], depth: number, parentPath: readonly number[]) {
       siblingRows.forEach((row, posInSet) => {
@@ -206,6 +211,22 @@ export function useExpandableRows<R, SR = unknown, K extends Key = Key>({
       return expandedRows.has(row as ExpandedRowData<R>);
     }
   }, [detailRenderer, expandedRowKeys, getChildren, getRowKey, rawRows, rowExpandable]);
+
+  const rowSpanLimits = useMemo(() => {
+    const limits = new Map<R, number>();
+    if (detailRenderer == null) return limits;
+
+    let nextDetailRowIdx = rows.length;
+    for (let index = rows.length - 1; index >= 0; index--) {
+      const row = rows[index];
+      if (isExpandedRow(row)) {
+        nextDetailRowIdx = index;
+      } else if (nextDetailRowIdx < rows.length) {
+        limits.set(row, nextDetailRowIdx - index);
+      }
+    }
+    return limits;
+  }, [detailRenderer, isExpandedRow, rows]);
 
   const useExpandColumn =
     showExpandColumn ?? (expandedRowRender != null || rawChildrenColumnName != null || hasTreeRows);
@@ -283,11 +304,15 @@ export function useExpandableRows<R, SR = unknown, K extends Key = Key>({
         };
       }
 
-      if (typeof column.colSpan !== 'function' && typeof column.editable !== 'function') {
+      if (
+        typeof column.colSpan !== 'function' &&
+        typeof column.rowSpan !== 'function' &&
+        typeof column.editable !== 'function'
+      ) {
         return column;
       }
 
-      const { colSpan, editable } = column;
+      const { colSpan, rowSpan, editable } = column;
       return {
         ...column,
         ...(typeof colSpan === 'function'
@@ -297,6 +322,18 @@ export function useExpandableRows<R, SR = unknown, K extends Key = Key>({
                   return undefined;
                 }
                 return colSpan(args);
+              }
+            }
+          : undefined),
+        ...(typeof rowSpan === 'function'
+          ? {
+              rowSpan(args: RowSpanArgs<R>) {
+                if (isExpandedRow(args.row)) return undefined;
+
+                const span = rowSpan(args);
+                return span != null && Number.isInteger(span) && span > 1
+                  ? Math.min(span, rowSpanLimits.get(args.row) ?? span)
+                  : span;
               }
             }
           : undefined),
@@ -320,6 +357,7 @@ export function useExpandableRows<R, SR = unknown, K extends Key = Key>({
     renderIcon,
     rowExpandable,
     rowMeta,
+    rowSpanLimits,
     toggleRow,
     treeIndentSize,
     useExpandColumn
@@ -354,34 +392,47 @@ export function useExpandableRows<R, SR = unknown, K extends Key = Key>({
   function handleRowsChange(updatedRows: R[], { indexes, column }: RowsChangeData<R, SR>) {
     if (!onRowsChange) return;
 
-    let updatedRawRows = rawRows;
+    let updatedRawRows: Maybe<R[]>;
     const rawIndexes = new Set<number>();
+    const copiedArrays = new Map<readonly R[], R[]>();
     for (const index of indexes) {
       const row = rows[index];
       if (isExpandedRow(row)) continue;
 
       const meta = rowMeta.get(row)!;
-      updatedRawRows = replaceRowAtPath(updatedRawRows, meta.path, updatedRows[index]);
+      updatedRawRows = replaceRowAtPath(updatedRawRows ?? rawRows, meta.path, updatedRows[index]);
       rawIndexes.add(meta.path[0]);
     }
 
-    if (rawIndexes.size > 0) {
-      onRowsChange([...updatedRawRows], { indexes: [...rawIndexes], column });
+    if (updatedRawRows != null) {
+      onRowsChange(updatedRawRows, { indexes: [...rawIndexes], column });
     }
-  }
 
-  function replaceRowAtPath(sourceRows: readonly R[], path: readonly number[], nextRow: R): R[] {
-    const [index, ...childPath] = path;
-    const nextRows = [...sourceRows];
-    if (childPath.length === 0) {
-      nextRows[index] = nextRow;
+    function replaceRowAtPath(
+      sourceRows: readonly R[],
+      path: readonly number[],
+      nextRow: R,
+      depth = 0
+    ): R[] {
+      let nextRows = copiedArrays.get(sourceRows);
+      if (nextRows === undefined) {
+        nextRows = [...sourceRows];
+        copiedArrays.set(sourceRows, nextRows);
+        // Later updates can reach this copy through an already updated ancestor.
+        copiedArrays.set(nextRows, nextRows);
+      }
+
+      const index = path[depth];
+      if (depth === path.length - 1) {
+        nextRows[index] = nextRow;
+        return nextRows;
+      }
+
+      const parentRow = nextRows[index];
+      const children = replaceRowAtPath(getChildren(parentRow), path, nextRow, depth + 1);
+      nextRows[index] = { ...parentRow, [childrenColumnName]: children };
       return nextRows;
     }
-
-    const parentRow = nextRows[index];
-    const children = replaceRowAtPath(getChildren(parentRow), childPath, nextRow);
-    nextRows[index] = { ...parentRow, [childrenColumnName]: children };
-    return nextRows;
   }
 
   function handleSelectedRowsChange(selectedRows: Set<K>) {

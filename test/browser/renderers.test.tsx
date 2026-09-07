@@ -296,3 +296,37 @@ test('renderRow defined using both contexts and renderers', async () => {
   await expect.element(row).toHaveClass('local');
   await expect.element(row).not.toHaveClass('global');
 });
+
+test.each([false, true])(
+  'only renders affected rows when the active cell changes (rowSpan: %s)',
+  async (withRowSpan) => {
+    const rows: readonly Row[] = [
+      { id: 1, col1: 'first', col2: 'a' },
+      { id: 2, col1: 'second', col2: 'b' },
+      { id: 3, col1: 'third', col2: 'c' }
+    ];
+    const rowClass = vi.fn((row: Row) => `test-row-${row.id}`);
+    const testColumns: readonly Column<Row>[] = withRowSpan
+      ? [
+          ...columns,
+          { key: 'span', name: 'Span', rowSpan: ({ row }) => (row.id === 1 ? 2 : undefined) }
+        ]
+      : columns;
+    const props = { columns: testColumns, rows, rowClass };
+    const { rerender } = await setup(props);
+    await userEvent.click(page.getCell({ name: 'first' }));
+
+    rowClass.mockClear();
+    await rerender(<DataGrid {...props} aria-label="Updated grid" />);
+    expect(rowClass).not.toHaveBeenCalled();
+
+    await userEvent.keyboard('{ArrowDown}');
+    await expect.element(page.getActiveCell()).toHaveTextContent('second');
+    expect(new Set(rowClass.mock.calls.map(([row]) => row.id))).toStrictEqual(new Set([1, 2]));
+
+    rowClass.mockClear();
+    await userEvent.keyboard('{ArrowRight}');
+    await expect.element(page.getActiveCell()).toHaveTextContent('b');
+    expect(new Set(rowClass.mock.calls.map(([row]) => row.id))).toStrictEqual(new Set([2]));
+  }
+);

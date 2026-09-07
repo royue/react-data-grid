@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { commands, page } from 'vitest/browser';
 
 import { DataGrid, type Column } from '../../src';
@@ -84,6 +85,37 @@ test('shrinks an auto-height row when the column becomes wide enough', async () 
   await commands.resizeColumn('Description', 300);
   await expect.poll(() => row.element().getBoundingClientRect().height).toBe(35);
 });
+
+test.each([false, true])(
+  'does not recalculate row heights when an unrelated column is resized (autoHeight: %s)',
+  async (autoHeight) => {
+    const rowHeight = vi.fn(() => 35);
+    await setup({
+      columns: [
+        { key: 'id', name: 'ID', width: 50, resizable: true },
+        {
+          key: 'description',
+          name: 'Description',
+          width: 100,
+          wrapText: true,
+          autoHeight
+        }
+      ],
+      rows: Array.from({ length: 100 }, (_, id) => ({ id, description: longText })),
+      rowHeight,
+      style: { width: 500, height: 200 }
+    });
+
+    await expect
+      .poll(() => page.getRow().first().element().getBoundingClientRect().height)
+      .toBeGreaterThanOrEqual(35);
+    rowHeight.mockClear();
+
+    await commands.resizeColumn('ID', 50);
+    await expect.element(page.getHeaderCell({ name: 'ID' })).toHaveStyle({ width: '100px' });
+    expect(rowHeight).not.toHaveBeenCalled();
+  }
+);
 
 test('measures auto-height columns outside the horizontal viewport', async () => {
   const columns: Column<Row>[] = Array.from({ length: 20 }, (_, index) => ({
@@ -354,6 +386,60 @@ test('last row remains above a horizontal scrollbar', async () => {
       return lastRow.getBoundingClientRect().bottom;
     })
     .toBeLessThanOrEqual(grid.getBoundingClientRect().bottom - 1);
+});
+
+test('updates cached row spans when cell content changes height without replacing rows', async () => {
+  function HeightCell({ row }: { row: Row }) {
+    const [expanded, setExpanded] = useState(false);
+    if (row.id !== 0) return null;
+    return (
+      <button
+        type="button"
+        style={{ height: expanded ? 80 : 20 }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        Resize content
+      </button>
+    );
+  }
+
+  await setup({
+    columns: [
+      {
+        key: 'span',
+        name: 'Span',
+        width: 100,
+        rowSpan: ({ row }) => (row.id === 0 ? 2 : undefined)
+      },
+      {
+        key: 'description',
+        name: 'Description',
+        width: 150,
+        autoHeight: true,
+        renderCell({ row }) {
+          return <HeightCell row={row} />;
+        }
+      }
+    ],
+    rows: [
+      { id: 0, description: '', span: 'merged' },
+      { id: 1, description: '' }
+    ],
+    rowHeight: 35
+  });
+  const mergedCell = page.getCell({ name: 'merged' });
+  await expect.element(mergedCell).toHaveStyle({ blockSize: '70px' });
+
+  await page.getByRole('button', { name: 'Resize content' }).click();
+  await expect.poll(() => mergedCell.element().getBoundingClientRect().height).toBeGreaterThan(70);
+  const totalHeight = page
+    .getRow()
+    .elements()
+    .reduce((height, row) => height + row.getBoundingClientRect().height, 0);
+  expect(mergedCell.element().getBoundingClientRect().height).toBe(totalHeight);
+
+  await page.getByRole('button', { name: 'Resize content' }).click();
+  await expect.element(mergedCell).toHaveStyle({ blockSize: '70px' });
 });
 
 function getVisibleRowAnchor() {

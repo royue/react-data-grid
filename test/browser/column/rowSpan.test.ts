@@ -1,9 +1,39 @@
-import { userEvent } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 
 import type { Column } from '../../../src';
-import { getCellsAtRowIndex, setup, validateCellPosition } from '../utils';
+import { getCellsAtRowIndex, scrollGrid, setup, validateCellPosition } from '../utils';
 
 describe('rowSpan', () => {
+  it('keeps a merged cell visible as its active row leaves and reenters the viewport', async () => {
+    const columns: readonly Column<number>[] = [
+      {
+        key: 'merged',
+        name: 'Merged',
+        width: 100,
+        rowSpan: ({ row }) => (row === 0 ? 50 : undefined),
+        renderCell: () => 'merged'
+      },
+      { key: 'value', name: 'Value', width: 100, renderCell: ({ row }) => String(row) }
+    ];
+    await setup({
+      columns,
+      rows: Array.from({ length: 100 }, (_, index) => index),
+      style: { width: 250, height: 200 }
+    });
+    const mergedCell = getCellsAtRowIndex(0).nth(0);
+    await userEvent.click(mergedCell);
+    scrollGrid({ top: 700 });
+    await expect.element(getCellsAtRowIndex(20)).toHaveLength(1);
+    await expect.element(getCellsAtRowIndex(0)).toHaveLength(1);
+    await expect.element(mergedCell).toHaveStyle({ blockSize: '1750px' });
+    await expect.element(page.getActiveCell()).toHaveTextContent('merged');
+
+    scrollGrid({ top: 0 });
+    await expect.element(getCellsAtRowIndex(0)).toHaveLength(2);
+    await expect.element(mergedCell).toHaveAttribute('aria-rowspan', '50');
+    await expect.element(mergedCell).toHaveStyle({ blockSize: '1750px' });
+  });
+
   function setupRowSpan() {
     interface Row {
       readonly id: number;

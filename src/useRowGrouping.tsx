@@ -35,6 +35,11 @@ interface RowGroupingDataGridProps<R, SR, K extends Key> extends DataGridProps<R
   rowGrouping: RowGroupingOptions<R>;
 }
 
+interface RowGroupMetadata<R> {
+  readonly parent: Maybe<readonly [GroupRow<R>, number]>;
+  readonly startRowIndex: number;
+}
+
 export function useRowGrouping<R, SR = unknown, K extends Key = Key>({
   rowGrouping,
   columns: rawColumns,
@@ -132,25 +137,36 @@ export function useRowGrouping<R, SR = unknown, K extends Key = Key>({
     return groupRows(rawRows, groupBy, 0);
   }, [groupBy, rowGrouper, rawRows]);
 
-  const [rows, isGroupRow] = useMemo((): [
+  const [rows, isGroupRow, rowMetadata] = useMemo((): [
     readonly (R | GroupRow<R>)[],
-    (row: R | GroupRow<R>) => row is GroupRow<R>
+    (row: R | GroupRow<R>) => row is GroupRow<R>,
+    ReadonlyMap<R | GroupRow<R>, RowGroupMetadata<R>>
   ] => {
     const allGroupRows = new Set<unknown>();
-    if (!groupedRows) return [rawRows, isGroupRow];
+    const rowMetadata = new Map<R | GroupRow<R>, RowGroupMetadata<R>>();
+    if (!groupedRows) {
+      rawRows.forEach((row, startRowIndex) => {
+        rowMetadata.set(row, { parent: undefined, startRowIndex });
+      });
+      return [rawRows, isGroupRow, rowMetadata];
+    }
 
     const flattenedRows: (R | GroupRow<R>)[] = [];
 
     const expandGroup = (
       rows: GroupByDictionary<R> | readonly R[],
-      parentId: string | undefined,
+      parent: Maybe<readonly [GroupRow<R>, number]>,
       level: number
     ): void => {
       if (isReadonlyArray(rows)) {
-        flattenedRows.push(...rows);
+        rows.forEach((row, index) => {
+          rowMetadata.set(row, { parent, startRowIndex: parent![0].startRowIndex + index + 1 });
+          flattenedRows.push(row);
+        });
         return;
       }
       Object.keys(rows).forEach((groupKey, posInSet, keys) => {
+        const parentId = parent?.[0].id;
         const id = groupIdGetter(groupKey, parentId);
         const isExpanded = expandedGroupIds.has(id);
         const { childRows, childGroups, startRowIndex } = rows[groupKey];
@@ -166,17 +182,19 @@ export function useRowGrouping<R, SR = unknown, K extends Key = Key>({
           startRowIndex,
           setSize: keys.length
         };
+        const rowIdx = flattenedRows.length;
         flattenedRows.push(groupRow);
         allGroupRows.add(groupRow);
+        rowMetadata.set(groupRow, { parent, startRowIndex });
 
         if (isExpanded) {
-          expandGroup(childGroups, id, level + 1);
+          expandGroup(childGroups, [groupRow, rowIdx], level + 1);
         }
       });
     };
 
     expandGroup(groupedRows, undefined, 0);
-    return [flattenedRows, isGroupRow];
+    return [flattenedRows, isGroupRow, rowMetadata];
 
     function isGroupRow(row: R | GroupRow<R>): row is GroupRow<R> {
       return allGroupRows.has(row);
@@ -205,17 +223,9 @@ export function useRowGrouping<R, SR = unknown, K extends Key = Key>({
 
   const getParentRowAndIndex = useCallback(
     (row: R | GroupRow<R>) => {
-      const rowIdx = rows.indexOf(row);
-      for (let i = rowIdx - 1; i >= 0; i--) {
-        const parentRow = rows[i];
-        if (isGroupRow(parentRow) && (!isGroupRow(row) || row.parentId === parentRow.id)) {
-          return [parentRow, i] as const;
-        }
-      }
-
-      return undefined;
+      return rowMetadata.get(row)?.parent;
     },
-    [isGroupRow, rows]
+    [rowMetadata]
   );
 
   const rowKeyGetter = useCallback(
@@ -228,16 +238,9 @@ export function useRowGrouping<R, SR = unknown, K extends Key = Key>({
         return rawRowKeyGetter(row);
       }
 
-      const parentRowAndIndex = getParentRowAndIndex(row);
-      if (parentRowAndIndex !== undefined) {
-        const { startRowIndex, childRows } = parentRowAndIndex[0];
-        const groupIndex = childRows.indexOf(row);
-        return startRowIndex + groupIndex + 1;
-      }
-
-      return rows.indexOf(row);
+      return rowMetadata.get(row)!.startRowIndex;
     },
-    [getParentRowAndIndex, isGroupRow, rawRowKeyGetter, rows]
+    [isGroupRow, rawRowKeyGetter, rowMetadata]
   );
 
   const selectedRows = useMemo((): Maybe<ReadonlySet<Key>> => {
@@ -329,7 +332,7 @@ export function useRowGrouping<R, SR = unknown, K extends Key = Key>({
     // If a group row is focused, and it is collapsed, move to the parent group row (if there is one).
     if (idx === -1 && event.key === leftKey && !row.isExpanded && row.level !== 0) {
       const parentRowAndIndex = getParentRowAndIndex(row);
-      if (parentRowAndIndex !== undefined) {
+      if (parentRowAndIndex != null) {
         event.preventGridDefault();
         setActivePosition({ idx, rowIdx: parentRowAndIndex[1] });
       }
@@ -411,11 +414,9 @@ export function useRowGrouping<R, SR = unknown, K extends Key = Key>({
     }
 
     let ariaRowIndex = rowProps['aria-rowindex'];
-    const parentRowAndIndex = getParentRowAndIndex(row);
-    if (parentRowAndIndex !== undefined) {
-      const { startRowIndex, childRows } = parentRowAndIndex[0];
-      const groupIndex = childRows.indexOf(row);
-      ariaRowIndex = startRowIndex + headerAndTopSummaryRowsCount + groupIndex + 2;
+    const metadata = rowMetadata.get(row)!;
+    if (metadata.parent != null) {
+      ariaRowIndex = metadata.startRowIndex + headerAndTopSummaryRowsCount + 1;
     }
 
     return rawRenderRow(key, {
