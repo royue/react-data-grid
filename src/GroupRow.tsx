@@ -73,8 +73,9 @@ function GroupedRow<R, SR>({
         style={{ gridRowStart }}
         {...props}
       >
-        {iterateOverViewportColumnsForRow(activeCellIdx)
-          .map(([column, isCellActive], index) => {
+        {Array.from(
+          iterateOverViewportColumnsForRow(activeCellIdx),
+          ([column, isCellActive], index) => {
             // Select is always the first column
             if (index === 0 && column.key === SELECT_COLUMN_KEY) {
               idx += 1;
@@ -95,8 +96,8 @@ function GroupedRow<R, SR>({
                 isGroupByColumn={groupBy.includes(column.key)}
               />
             );
-          })
-          .toArray()}
+          }
+        )}
       </div>
     </RowSelectionContext.Provider>
   );

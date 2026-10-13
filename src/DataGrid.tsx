@@ -752,7 +752,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
   }
 
   const spanStartRows = useMemo(
-    () => new Set(rowSpanRangesByCell.values().map((range) => range.rowIdx)),
+    () => new Set(Array.from(rowSpanRangesByCell.values(), (range) => range.rowIdx)),
     [rowSpanRangesByCell]
   );
   const { rowSpanIterators, getRowSpanAwareColumnIterator } = useMemo(() => {
@@ -1477,10 +1477,7 @@ function DataGridImpl<R, SR = unknown, K extends Key = Key>(props: DataGridImplP
       addRowIdx(activeRowIdx);
     }
 
-    return renderedRowIdxs
-      .values()
-      .toArray()
-      .sort((a, b) => a - b);
+    return Array.from(renderedRowIdxs).sort((a, b) => a - b);
   }
 
   const viewportRowIndexes = getViewportRowIndexes();

@@ -53,8 +53,9 @@ function SummaryRow<R, SR>({
 }: SummaryRowProps<R, SR>) {
   const isPositionOnRow = activeCellIdx === -1;
 
-  const cells = iterateOverViewportColumnsForRow(activeCellIdx, { type: 'SUMMARY', row })
-    .map(([column, isCellActive, colSpan]) => (
+  const cells = Array.from(
+    iterateOverViewportColumnsForRow(activeCellIdx, { type: 'SUMMARY', row }),
+    ([column, isCellActive, colSpan]) => (
       <SummaryCell<R, SR>
         key={column.key}
         column={column}
@@ -64,8 +65,8 @@ function SummaryRow<R, SR>({
         isCellActive={isCellActive}
         setActivePosition={setActivePosition}
       />
-    ))
-    .toArray();
+    )
+  );
 
   return (
     <div

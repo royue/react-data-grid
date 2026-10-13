@@ -40,8 +40,9 @@ function Row<R, SR>({
     className
   );
 
-  const cells = iterateOverViewportColumnsForRow(activeCellIdx, { type: 'ROW', row })
-    .map(([column, isCellActive, colSpan, rowSpan, rowSpanHeight]) => {
+  const cells = Array.from(
+    iterateOverViewportColumnsForRow(activeCellIdx, { type: 'ROW', row }),
+    ([column, isCellActive, colSpan, rowSpan, rowSpanHeight]) => {
       if (isCellActive && activeCellEditor) {
         return activeCellEditor;
       }
@@ -62,8 +63,8 @@ function Row<R, SR>({
         onRowChange,
         setActivePosition
       });
-    })
-    .toArray();
+    }
+  );
 
   const selectionValue = useMemo(
     (): RowSelectionContextValue => ({ isRowSelected, isRowSelectionDisabled }),

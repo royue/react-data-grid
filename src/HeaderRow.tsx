@@ -69,8 +69,9 @@ function HeaderRow<R, SR, K extends React.Key>({
   const [draggedColumnKey, setDraggedColumnKey] = useState<string>();
   const isPositionOnRow = activeCellIdx === -1;
 
-  const cells = iterateOverViewportColumnsForRow(activeCellIdx, { type: 'HEADER' })
-    .map(([column, isCellActive, colSpan], index) => (
+  const cells = Array.from(
+    iterateOverViewportColumnsForRow(activeCellIdx, { type: 'HEADER' }),
+    ([column, isCellActive, colSpan], index) => (
       <HeaderCell<R, SR>
         key={column.key}
         column={column}
@@ -88,8 +89,8 @@ function HeaderRow<R, SR, K extends React.Key>({
         draggedColumnKey={draggedColumnKey}
         setDraggedColumnKey={setDraggedColumnKey}
       />
-    ))
-    .toArray();
+    )
+  );
 
   return (
     <div

@@ -133,7 +133,7 @@ export function useViewportColumns<R, SR>({
   );
 
   const viewportColumns = useMemo((): readonly CalculatedColumn<R, SR>[] => {
-    return iterateOverViewportColumns(-1).toArray();
+    return Array.from(iterateOverViewportColumns(-1));
   }, [iterateOverViewportColumns]);
 
   const autoHeightViewportColumns = useMemo(() => {
@@ -143,10 +143,7 @@ export function useViewportColumns<R, SR>({
     for (const column of autoHeightColumns) {
       columnsToRender.add(column);
     }
-    return columnsToRender
-      .values()
-      .toArray()
-      .sort((a, b) => a.idx - b.idx);
+    return Array.from(columnsToRender).sort((a, b) => a.idx - b.idx);
   }, [autoHeightColumns, viewportColumns]);
 
   const iterateOverViewportColumnsForRow = useCallback<IterateOverViewportColumnsForRow<R, SR>>(
@@ -202,10 +199,7 @@ export function useViewportColumns<R, SR>({
         }
       }
 
-      const rowColumns = columnsToRender
-        .values()
-        .toArray()
-        .sort((a, b) => a.idx - b.idx);
+      const rowColumns = Array.from(columnsToRender).sort((a, b) => a.idx - b.idx);
       let coveredUntilColumnIdx = -1;
 
       for (const column of rowColumns) {
