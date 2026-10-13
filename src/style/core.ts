@@ -43,6 +43,58 @@ const root = css`
       color-scheme: light;
     }
 
+    /* light-dark() was added in Chrome 123. Keep the default theme usable in
+     * older browsers while retaining automatic color-scheme support where it
+     * is available. */
+    @supports not (color: light-dark(#000, #fff)) {
+      --rdg-color: #000;
+      --rdg-border-color: #ddd;
+      --rdg-summary-border-color: #aaa;
+      --rdg-background-color: hsl(0deg 0% 100%);
+      --rdg-header-background-color: hsl(0deg 0% 97.5%);
+      --rdg-header-draggable-background-color: hsl(0deg 0% 90.5%);
+      --rdg-row-hover-background-color: hsl(0deg 0% 96%);
+      --rdg-row-selected-background-color: var(--ant-color-primary-bg, hsl(207deg 76% 92%));
+      --rdg-row-selected-hover-background-color: var(
+        --ant-color-primary-bg-hover,
+        hsl(207deg 76% 88%)
+      );
+
+      &.rdg-dark {
+        --rdg-color: #ddd;
+        --rdg-border-color: #444;
+        --rdg-summary-border-color: #555;
+        --rdg-background-color: hsl(0deg 0% 13%);
+        --rdg-header-background-color: hsl(0deg 0% 10.5%);
+        --rdg-header-draggable-background-color: hsl(0deg 0% 17.5%);
+        --rdg-row-hover-background-color: hsl(0deg 0% 9%);
+        --rdg-row-selected-background-color: var(--ant-color-primary-bg, hsl(207deg 76% 42%));
+        --rdg-row-selected-hover-background-color: var(
+          --ant-color-primary-bg-hover,
+          hsl(207deg 76% 38%)
+        );
+      }
+
+      @media (prefers-color-scheme: dark) {
+        &:not(.rdg-light) {
+          --rdg-color: #ddd;
+          --rdg-border-color: #444;
+          --rdg-summary-border-color: #555;
+          --rdg-background-color: hsl(0deg 0% 13%);
+          --rdg-header-background-color: hsl(0deg 0% 10.5%);
+          --rdg-header-draggable-background-color: hsl(0deg 0% 17.5%);
+          --rdg-row-hover-background-color: hsl(0deg 0% 9%);
+          --rdg-row-selected-background-color: var(--ant-color-primary-bg, hsl(207deg 76% 42%));
+          --rdg-row-selected-hover-background-color: var(
+            --ant-color-primary-bg-hover,
+            hsl(207deg 76% 38%)
+          );
+        }
+      }
+
+      accent-color: var(--ant-color-primary, hsl(207deg 100% 29%));
+    }
+
     display: grid;
 
     accent-color: light-dark(
@@ -108,6 +160,10 @@ export const frozenColumnShadowClassname = css`
     light-dark(rgb(0 0 0 / 15%), rgb(0 0 0 / 40%)),
     transparent
   );
+
+  @supports not (color: light-dark(#000, #fff)) {
+    background-image: linear-gradient(to right, rgb(0 0 0 / 15%), transparent);
+  }
   pointer-events: none;
   z-index: 1;
 
@@ -127,6 +183,10 @@ export const frozenRightColumnShadowClassname = css`
     light-dark(rgb(0 0 0 / 15%), rgb(0 0 0 / 40%)),
     transparent
   );
+
+  @supports not (color: light-dark(#000, #fff)) {
+    background-image: linear-gradient(to left, rgb(0 0 0 / 15%), transparent);
+  }
   pointer-events: none;
   z-index: 1;
 
