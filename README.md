@@ -211,6 +211,8 @@ The DataGrid provides multiple ways to customize its appearance and behavior.
 
 The DataGrid supports both light and dark color schemes out of the box using the `light-dark()` CSS function. The theme automatically adapts based on the user's system preference when `color-scheme: light dark;` is set.
 
+The bundled styles include a static fallback for browsers that do not support `light-dark()`, including Chrome 121. Add the `rdg-light` or `rdg-dark` class when you need to force a theme in those browsers.
+
 To enforce a specific theme, we recommend setting the standard `color-scheme` CSS property on the `:root`:
 
 ```css

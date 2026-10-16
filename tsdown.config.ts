@@ -6,7 +6,7 @@ import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
   outDir: 'lib',
-  target: ['baseline-widely-available', 'node24.0.0'],
+  target: ['chrome108', 'node24.0.0'],
   platform: 'neutral',
   sourcemap: true,
   css: {
